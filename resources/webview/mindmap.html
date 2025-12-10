@@ -38,7 +38,10 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            min-width: 200px;
+            min-width: 250px;
+            max-width: 300px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .control-group {
             display: flex;
@@ -46,9 +49,11 @@
             gap: 4px;
         }
         .control-group label {
-            font-size: 11px;
-            font-weight: bold;
-            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--vscode-editor-foreground);
+            text-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
         button {
             background: var(--vscode-button-background);
@@ -67,7 +72,7 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-        input[type="text"], select {
+        input[type="text"] {
             background: var(--vscode-input-background);
             color: var(--vscode-input-foreground);
             border: 1px solid var(--vscode-input-border);
@@ -75,8 +80,102 @@
             border-radius: 2px;
             font-size: 11px;
         }
-        input[type="text"]:focus, select:focus {
+        input[type="text"]:focus {
             outline: 1px solid var(--vscode-focusBorder);
+        }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 6px;
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 3px;
+            transition: background-color 0.15s;
+        }
+        .checkbox-item:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+        .checkbox-item input[type="checkbox"] {
+            cursor: pointer;
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--vscode-textLink-foreground);
+        }
+        .checkbox-item label {
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            margin: 0;
+            color: var(--vscode-editor-foreground);
+            flex: 1;
+            line-height: 1.4;
+        }
+        .filter-mode-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
+            padding: 4px;
+            background: var(--vscode-input-background);
+            border-radius: 3px;
+        }
+        .filter-mode-toggle button {
+            flex: 1;
+            padding: 4px 8px;
+            font-size: 10px;
+            background: transparent;
+            border: 1px solid var(--vscode-input-border);
+        }
+        .filter-mode-toggle button.active {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+        .display-options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .display-option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .display-option-row label {
+            font-size: 11px;
+            font-weight: 500;
+            margin: 0;
+            flex: 1;
+        }
+        .display-option-row input[type="range"] {
+            flex: 2;
+        }
+        .display-option-row select {
+            flex: 2;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            padding: 4px 8px;
+            border-radius: 2px;
+            font-size: 11px;
+        }
+        .display-option-value {
+            min-width: 40px;
+            text-align: right;
+            font-size: 10px;
+            color: var(--vscode-descriptionForeground);
         }
         .zoom-controls {
             display: flex;
@@ -168,7 +267,7 @@
         .stats {
             position: absolute;
             top: 10px;
-            left: 230px;
+            left: 320px;
             z-index: 1000;
             background: var(--vscode-editor-background);
             padding: 8px 12px;
@@ -189,21 +288,61 @@
             </div>
             
             <div class="control-group">
-                <label>🎯 Filter</label>
-                <select id="typeFilter" onchange="applyFilters()">
-                    <option value="all">Alle Typen</option>
-                    <option value="account">Accounts</option>
-                    <option value="project">Projekte</option>
-                    <option value="domain">Domains</option>
-                    <option value="server">Server</option>
-                    <option value="record">Records</option>
-                </select>
-                <select id="providerFilter" onchange="applyFilters()">
-                    <option value="all">Alle Provider</option>
-                </select>
-                <select id="projectFilter" onchange="applyFilters()">
-                    <option value="all">Alle Projekte</option>
-                </select>
+                <label>🎯 Filter: Typ</label>
+                <div class="filter-mode-toggle">
+                    <button id="typeFilterModeMulti" class="active" onclick="setFilterMode('type', 'multi')">Multi</button>
+                    <button id="typeFilterModeSingle" onclick="setFilterMode('type', 'single')">Single</button>
+                </div>
+                <div class="checkbox-group" id="typeFilterGroup">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="filter-account" checked onchange="handleSingleSelectFilter('type', 'filter-account'); applyFilters()">
+                        <label for="filter-account">Accounts</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="filter-project" checked onchange="handleSingleSelectFilter('type', 'filter-project'); applyFilters()">
+                        <label for="filter-project">Projekte</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="filter-domain" checked onchange="handleSingleSelectFilter('type', 'filter-domain'); applyFilters()">
+                        <label for="filter-domain">Domains</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="filter-server" checked onchange="handleSingleSelectFilter('type', 'filter-server'); applyFilters()">
+                        <label for="filter-server">Server</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="filter-record" checked onchange="handleSingleSelectFilter('type', 'filter-record'); applyFilters()">
+                        <label for="filter-record">Records</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>🎯 Filter: Provider</label>
+                <div class="filter-mode-toggle">
+                    <button id="providerFilterModeMulti" class="active" onclick="setFilterMode('provider', 'multi')">Multi</button>
+                    <button id="providerFilterModeSingle" onclick="setFilterMode('provider', 'single')">Single</button>
+                </div>
+                <div class="checkbox-group" id="providerFilterGroup">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="filter-provider-all" checked onchange="toggleAllProviders()">
+                        <label for="filter-provider-all">Alle Provider</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>🎯 Filter: Projekt</label>
+                <div class="filter-mode-toggle">
+                    <button id="projectFilterModeMulti" class="active" onclick="setFilterMode('project', 'multi')">Multi</button>
+                    <button id="projectFilterModeSingle" onclick="setFilterMode('project', 'single')">Single</button>
+                </div>
+                <div class="checkbox-group" id="projectFilterGroup">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="filter-project-all" checked onchange="toggleAllProjects()">
+                        <label for="filter-project-all">Alle Projekte</label>
+                    </div>
+                </div>
             </div>
             
             <div class="control-group">
@@ -213,6 +352,52 @@
                     <span class="zoom-level" id="zoomLevel">100%</span>
                     <button onclick="zoomIn()" title="Reinzoomen">+</button>
                     <button onclick="resetZoom()" title="Zoom zurücksetzen">Reset</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>🎨 Darstellung</label>
+                <div class="display-options">
+                    <div class="display-option-row">
+                        <label>Layout:</label>
+                        <select id="layoutMode" onchange="changeLayout()">
+                            <option value="hierarchical">Hierarchisch</option>
+                            <option value="circular">Kreis</option>
+                            <option value="grid">Grid</option>
+                            <option value="force">Force-Directed</option>
+                        </select>
+                    </div>
+                    <div class="display-option-row">
+                        <label>Node-Größe:</label>
+                        <input type="range" id="nodeSize" min="0.5" max="2" step="0.1" value="1" oninput="updateNodeSize(this.value)">
+                        <span class="display-option-value" id="nodeSizeValue">100%</span>
+                    </div>
+                    <div class="display-option-row">
+                        <label>Verbindungen:</label>
+                        <select id="connectionStyle" onchange="updateConnectionStyle()">
+                            <option value="straight">Gerade</option>
+                            <option value="curved">Gebogen</option>
+                            <option value="dashed">Gestrichelt</option>
+                        </select>
+                    </div>
+                    <div class="display-option-row">
+                        <label>Verbindungsstärke:</label>
+                        <input type="range" id="connectionWidth" min="1" max="5" step="0.5" value="2" oninput="updateConnectionWidth(this.value)">
+                        <span class="display-option-value" id="connectionWidthValue">2px</span>
+                    </div>
+                    <div class="display-option-row">
+                        <label>Labels anzeigen:</label>
+                        <input type="checkbox" id="showLabels" checked onchange="toggleLabels()">
+                    </div>
+                    <div class="display-option-row">
+                        <label>Node-Farben:</label>
+                        <select id="nodeColorMode" onchange="updateNodeColors()">
+                            <option value="type">Nach Typ</option>
+                            <option value="provider">Nach Provider</option>
+                            <option value="project">Nach Projekt</option>
+                            <option value="status">Nach Status</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             
@@ -266,6 +451,12 @@
         let allConnections = [];
         let filteredNodes = [];
         let filteredConnections = [];
+        let filterModes = { type: 'multi', provider: 'multi', project: 'multi' };
+        let nodeSize = 1;
+        let connectionStyle = 'straight';
+        let connectionWidth = 2;
+        let showLabels = true;
+        let nodeColorMode = 'type';
 
         window.addEventListener('message', event => {
             const message = event.data;
@@ -282,24 +473,88 @@
             if (!graphData) return;
             
             // Populate provider filter
-            const providerSelect = document.getElementById('providerFilter');
+            const providerGroup = document.getElementById('providerFilterGroup');
             const providers = new Set();
             graphData.accounts.forEach(acc => providers.add(acc.provider));
             providers.forEach(prov => {
-                const option = document.createElement('option');
-                option.value = prov;
-                option.textContent = prov;
-                providerSelect.appendChild(option);
+                const item = document.createElement('div');
+                item.className = 'checkbox-item';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `filter-provider-${prov}`;
+                checkbox.checked = true;
+                checkbox.onchange = () => {
+                    handleSingleSelectFilter('provider', checkbox.id);
+                    applyFilters();
+                };
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = prov;
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                providerGroup.appendChild(item);
             });
             
             // Populate project filter
-            const projectSelect = document.getElementById('projectFilter');
+            const projectGroup = document.getElementById('projectFilterGroup');
             graphData.projects.forEach(proj => {
-                const option = document.createElement('option');
-                option.value = proj.id;
-                option.textContent = proj.name;
-                projectSelect.appendChild(option);
+                const item = document.createElement('div');
+                item.className = 'checkbox-item';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `filter-project-${proj.id}`;
+                checkbox.checked = true;
+                checkbox.onchange = () => {
+                    handleSingleSelectFilter('project', checkbox.id);
+                    applyFilters();
+                };
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = proj.name;
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                projectGroup.appendChild(item);
             });
+        }
+        
+        function toggleAllProviders() {
+            const allCheckbox = document.getElementById('filter-provider-all');
+            const checkboxes = document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)');
+            checkboxes.forEach(cb => cb.checked = allCheckbox.checked);
+            applyFilters();
+        }
+        
+        function toggleAllProjects() {
+            const allCheckbox = document.getElementById('filter-project-all');
+            const checkboxes = document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)');
+            checkboxes.forEach(cb => cb.checked = allCheckbox.checked);
+            applyFilters();
+        }
+        
+        function setFilterMode(category, mode) {
+            filterModes[category] = mode;
+            const multiBtn = document.getElementById(`${category}FilterModeMulti`);
+            const singleBtn = document.getElementById(`${category}FilterModeSingle`);
+            if (mode === 'multi') {
+                multiBtn.classList.add('active');
+                singleBtn.classList.remove('active');
+            } else {
+                singleBtn.classList.add('active');
+                multiBtn.classList.remove('active');
+            }
+            applyFilters();
+        }
+        
+        function handleSingleSelectFilter(category, clickedId) {
+            if (filterModes[category] !== 'single') return;
+            const groupId = `${category}FilterGroup`;
+            const checkboxes = document.querySelectorAll(`#${groupId} input[type="checkbox"]`);
+            checkboxes.forEach(cb => {
+                if (cb.id !== clickedId) {
+                    cb.checked = false;
+                }
+            });
+            applyFilters();
         }
 
         function renderGraph() {
@@ -416,21 +671,124 @@
                 });
             });
 
+            applyLayout();
             applyFilters();
             updateStats();
         }
+        
+        function applyLayout() {
+            if (layoutMode === 'hierarchical') {
+                // Already hierarchical, keep as is
+                return;
+            }
+            
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const radius = Math.min(window.innerWidth, window.innerHeight) * 0.3;
+            
+            if (layoutMode === 'circular') {
+                // Arrange nodes in a circle
+                allNodes.forEach((node, idx) => {
+                    const angle = (idx / allNodes.length) * 2 * Math.PI;
+                    node.x = centerX + radius * Math.cos(angle);
+                    node.y = centerY + radius * Math.sin(angle);
+                });
+            } else if (layoutMode === 'grid') {
+                // Arrange nodes in a grid
+                const cols = Math.ceil(Math.sqrt(allNodes.length));
+                const cellWidth = 200;
+                const cellHeight = 100;
+                allNodes.forEach((node, idx) => {
+                    const col = idx % cols;
+                    const row = Math.floor(idx / cols);
+                    node.x = centerX - (cols * cellWidth) / 2 + col * cellWidth;
+                    node.y = centerY - (Math.ceil(allNodes.length / cols) * cellHeight) / 2 + row * cellHeight;
+                });
+            } else if (layoutMode === 'force') {
+                // Simple force-directed: spread nodes randomly with some spacing
+                allNodes.forEach((node, idx) => {
+                    const angle = Math.random() * 2 * Math.PI;
+                    const dist = Math.random() * radius;
+                    node.x = centerX + dist * Math.cos(angle);
+                    node.y = centerY + dist * Math.sin(angle);
+                });
+            }
+        }
 
         function applyFilters() {
-            const typeFilter = document.getElementById('typeFilter').value;
-            const providerFilter = document.getElementById('providerFilter').value;
-            const projectFilter = document.getElementById('projectFilter').value;
+            // Handle single-select mode for type filter
+            if (filterModes.type === 'single') {
+                const checked = document.querySelectorAll('#typeFilterGroup input[type="checkbox"]:checked');
+                if (checked.length > 1) {
+                    // If multiple checked in single mode, uncheck all except the last one
+                    checked.forEach((cb, idx) => {
+                        if (idx < checked.length - 1) cb.checked = false;
+                    });
+                }
+            }
+            
+            // Get type filters
+            const typeFilters = {
+                account: document.getElementById('filter-account').checked,
+                project: document.getElementById('filter-project').checked,
+                domain: document.getElementById('filter-domain').checked,
+                server: document.getElementById('filter-server').checked,
+                record: document.getElementById('filter-record').checked
+            };
+            
+            // Handle single-select mode for provider filter
+            if (filterModes.provider === 'single') {
+                const checked = document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all):checked');
+                if (checked.length > 1) {
+                    checked.forEach((cb, idx) => {
+                        if (idx < checked.length - 1) cb.checked = false;
+                    });
+                }
+            }
+            
+            // Get provider filters
+            const providerFilters = new Set();
+            document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)').forEach(cb => {
+                if (cb.checked) {
+                    providerFilters.add(cb.id.replace('filter-provider-', ''));
+                }
+            });
+            const allProviders = document.getElementById('filter-provider-all').checked || filterModes.provider === 'single';
+            
+            // Handle single-select mode for project filter
+            if (filterModes.project === 'single') {
+                const checked = document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all):checked');
+                if (checked.length > 1) {
+                    checked.forEach((cb, idx) => {
+                        if (idx < checked.length - 1) cb.checked = false;
+                    });
+                }
+            }
+            
+            // Get project filters
+            const projectFilters = new Set();
+            document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)').forEach(cb => {
+                if (cb.checked) {
+                    projectFilters.add(cb.id.replace('filter-project-', ''));
+                }
+            });
+            const allProjects = document.getElementById('filter-project-all').checked || filterModes.project === 'single';
+            
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
             filteredNodes = allNodes.filter(node => {
-                if (typeFilter !== 'all' && node.type !== typeFilter) return false;
-                if (providerFilter !== 'all' && node.provider !== providerFilter) return false;
-                if (projectFilter !== 'all' && node.projectId !== projectFilter) return false;
+                // Type filter
+                if (!typeFilters[node.type]) return false;
+                
+                // Provider filter
+                if (!allProviders && node.provider && !providerFilters.has(node.provider)) return false;
+                
+                // Project filter
+                if (!allProjects && node.projectId && !projectFilters.has(node.projectId)) return false;
+                
+                // Search filter
                 if (searchTerm && !node.label.toLowerCase().includes(searchTerm)) return false;
+                
                 return true;
             });
 
@@ -447,44 +805,45 @@
             const canvas = document.getElementById('canvas');
             canvas.innerHTML = '';
 
-            // Create SVG for connections
+            // Create SVG for connections (behind nodes)
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.id = 'connections-svg';
             svg.style.position = 'absolute';
+            svg.style.top = '0';
+            svg.style.left = '0';
             svg.style.width = '100%';
             svg.style.height = '100%';
             svg.style.pointerEvents = 'none';
-            svg.style.zIndex = '0';
+            svg.style.zIndex = '1';
             canvas.appendChild(svg);
 
-            // Render connections
-            filteredConnections.forEach(conn => {
-                const fromNode = filteredNodes.find(n => n.id === conn.from);
-                const toNode = filteredNodes.find(n => n.id === conn.to);
-                if (!fromNode || !toNode) return;
-
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                const x1 = (fromNode.x + 50) * zoomLevel + panX;
-                const y1 = (fromNode.y + 20) * zoomLevel + panY;
-                const x2 = (toNode.x + 50) * zoomLevel + panX;
-                const y2 = (toNode.y + 20) * zoomLevel + panY;
-                line.setAttribute('x1', x1);
-                line.setAttribute('y1', y1);
-                line.setAttribute('x2', x2);
-                line.setAttribute('y2', y2);
-                line.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
-                line.setAttribute('stroke-width', 2 * zoomLevel);
-                svg.appendChild(line);
-            });
-
-            // Render nodes
+            // Render nodes first (so they're on top)
             filteredNodes.forEach(node => {
                 const nodeEl = document.createElement('div');
                 nodeEl.className = `node node-${node.type}`;
-                nodeEl.textContent = node.label;
+                if (showLabels) {
+                    nodeEl.textContent = node.label;
+                } else {
+                    nodeEl.textContent = '';
+                    nodeEl.title = node.label;
+                }
                 nodeEl.setAttribute('data-node-id', node.id);
-                nodeEl.style.left = (node.x * zoomLevel + panX) + 'px';
-                nodeEl.style.top = (node.y * zoomLevel + panY) + 'px';
-                nodeEl.style.fontSize = (12 * zoomLevel) + 'px';
+                nodeEl.style.position = 'absolute';
+                nodeEl.style.left = node.x + 'px';
+                nodeEl.style.top = node.y + 'px';
+                nodeEl.style.zIndex = '10';
+                nodeEl.style.transform = `scale(${nodeSize})`;
+                nodeEl.style.transformOrigin = 'center';
+                
+                // Apply color mode
+                if (nodeColorMode === 'provider' && node.provider) {
+                    nodeEl.style.backgroundColor = getProviderColor(node.provider);
+                } else if (nodeColorMode === 'project' && node.projectId) {
+                    nodeEl.style.backgroundColor = getProjectColor(node.projectId);
+                } else if (nodeColorMode === 'status' && node.status) {
+                    nodeEl.style.backgroundColor = getStatusColor(node.status);
+                }
+                
                 nodeEl.onclick = () => {
                     vscode.postMessage({
                         command: 'nodeClick',
@@ -495,6 +854,45 @@
                 canvas.appendChild(nodeEl);
             });
 
+            // Render connections after nodes (so they appear behind)
+            filteredConnections.forEach(conn => {
+                const fromNode = filteredNodes.find(n => n.id === conn.from);
+                const toNode = filteredNodes.find(n => n.id === conn.to);
+                if (!fromNode || !toNode) return;
+
+                const x1 = fromNode.x + 50;
+                const y1 = fromNode.y + 20;
+                const x2 = toNode.x + 50;
+                const y2 = toNode.y + 20;
+                
+                if (connectionStyle === 'curved') {
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const midX = (x1 + x2) / 2;
+                    const midY = (y1 + y2) / 2;
+                    const curveOffset = 30;
+                    const d = `M ${x1} ${y1} Q ${midX} ${midY - curveOffset}, ${x2} ${y2}`;
+                    path.setAttribute('d', d);
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
+                    path.setAttribute('stroke-width', connectionWidth);
+                    path.setAttribute('opacity', '0.6');
+                    svg.appendChild(path);
+                } else {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x1);
+                    line.setAttribute('y1', y1);
+                    line.setAttribute('x2', x2);
+                    line.setAttribute('y2', y2);
+                    line.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
+                    line.setAttribute('stroke-width', connectionWidth);
+                    line.setAttribute('opacity', '0.6');
+                    if (connectionStyle === 'dashed') {
+                        line.setAttribute('stroke-dasharray', '5,5');
+                    }
+                    svg.appendChild(line);
+                }
+            });
+
             updateTransform();
         }
 
@@ -502,6 +900,13 @@
             const canvas = document.getElementById('canvas');
             canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
             document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+            
+            // Update SVG transform to match canvas
+            const svg = document.getElementById('connections-svg');
+            if (svg) {
+                svg.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+                svg.style.transformOrigin = '0 0';
+            }
         }
 
         function zoomIn() {
@@ -569,17 +974,109 @@
 
         function resetView() {
             resetZoom();
-            document.getElementById('typeFilter').value = 'all';
-            document.getElementById('providerFilter').value = 'all';
-            document.getElementById('projectFilter').value = 'all';
+            // Reset filter modes
+            filterModes = { type: 'multi', provider: 'multi', project: 'multi' };
+            document.getElementById('typeFilterModeMulti').classList.add('active');
+            document.getElementById('typeFilterModeSingle').classList.remove('active');
+            document.getElementById('providerFilterModeMulti').classList.add('active');
+            document.getElementById('providerFilterModeSingle').classList.remove('active');
+            document.getElementById('projectFilterModeMulti').classList.add('active');
+            document.getElementById('projectFilterModeSingle').classList.remove('active');
+            // Reset type filters
+            document.getElementById('filter-account').checked = true;
+            document.getElementById('filter-project').checked = true;
+            document.getElementById('filter-domain').checked = true;
+            document.getElementById('filter-server').checked = true;
+            document.getElementById('filter-record').checked = true;
+            // Reset provider filters
+            document.getElementById('filter-provider-all').checked = true;
+            document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)').forEach(cb => cb.checked = true);
+            // Reset project filters
+            document.getElementById('filter-project-all').checked = true;
+            document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)').forEach(cb => cb.checked = true);
+            // Reset display options
+            layoutMode = 'hierarchical';
+            document.getElementById('layoutMode').value = 'hierarchical';
+            nodeSize = 1;
+            document.getElementById('nodeSize').value = 1;
+            document.getElementById('nodeSizeValue').textContent = '100%';
+            connectionStyle = 'straight';
+            document.getElementById('connectionStyle').value = 'straight';
+            connectionWidth = 2;
+            document.getElementById('connectionWidth').value = 2;
+            document.getElementById('connectionWidthValue').textContent = '2px';
+            showLabels = true;
+            document.getElementById('showLabels').checked = true;
+            nodeColorMode = 'type';
+            document.getElementById('nodeColorMode').value = 'type';
             document.getElementById('searchInput').value = '';
             document.getElementById('quickSearch').value = '';
-            applyFilters();
+            renderGraph();
         }
 
         function toggleLayout() {
             layoutMode = layoutMode === 'hierarchical' ? 'force' : 'hierarchical';
+            document.getElementById('layoutMode').value = layoutMode;
             renderGraph();
+        }
+        
+        function changeLayout() {
+            layoutMode = document.getElementById('layoutMode').value;
+            renderGraph();
+        }
+        
+        function updateNodeSize(value) {
+            nodeSize = parseFloat(value);
+            document.getElementById('nodeSizeValue').textContent = Math.round(nodeSize * 100) + '%';
+            renderFilteredGraph();
+        }
+        
+        function updateConnectionStyle() {
+            connectionStyle = document.getElementById('connectionStyle').value;
+            renderFilteredGraph();
+        }
+        
+        function updateConnectionWidth(value) {
+            connectionWidth = parseFloat(value);
+            document.getElementById('connectionWidthValue').textContent = connectionWidth + 'px';
+            renderFilteredGraph();
+        }
+        
+        function toggleLabels() {
+            showLabels = document.getElementById('showLabels').checked;
+            renderFilteredGraph();
+        }
+        
+        function updateNodeColors() {
+            nodeColorMode = document.getElementById('nodeColorMode').value;
+            renderFilteredGraph();
+        }
+        
+        function getProviderColor(provider) {
+            const colors = {
+                'ionos-dns': '#0066cc',
+                'hetzner-cloud': '#d50c2d',
+                'cloudflare': '#f38020',
+                'google-dns': '#4285f4',
+                'aws-route53': '#ff9900'
+            };
+            return colors[provider] || 'var(--vscode-badge-background)';
+        }
+        
+        function getProjectColor(projectId) {
+            if (!graphData) return 'var(--vscode-textBlockQuote-background)';
+            const project = graphData.projects.find(p => p.id === projectId);
+            return project?.color || 'var(--vscode-textBlockQuote-background)';
+        }
+        
+        function getStatusColor(status) {
+            const colors = {
+                'running': '#4caf50',
+                'off': '#f44336',
+                'migrating': '#ff9800',
+                'unknown': '#9e9e9e'
+            };
+            return colors[status] || 'var(--vscode-inputValidation-infoBackground)';
         }
 
         function exportData() {

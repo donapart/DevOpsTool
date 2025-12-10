@@ -2,6 +2,21 @@
 
 Alle wichtigen Änderungen an dieser Extension werden hier dokumentiert.
 
+## [0.4.0] - 2024-12-10
+
+### Neu
+- **DevOps Map - Erweiterte Filter & Darstellung**
+  - Filter mit Single/Multi-Select Modus (Typ, Provider, Projekt)
+  - Toggle zwischen Multi-Select und Single-Select pro Filter-Kategorie
+  - Layout-Modi: Hierarchisch, Kreis, Grid, Force-Directed
+  - Node-Größe anpassbar (50% - 200%)
+  - Verbindungsstile: Gerade, Gebogen, Gestrichelt
+  - Verbindungsstärke einstellbar (1-5px)
+  - Labels ein/ausblenden
+  - Node-Farben nach Typ, Provider, Projekt oder Status
+  - Verbesserte Kontraste und Lesbarkeit der Filter-UI
+  - Scrollbare Controls-Box für bessere Übersicht
+
 ## [0.1.0] - 2024-12-10
 
 ### Neu

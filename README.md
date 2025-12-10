@@ -27,6 +27,21 @@ Eine VS Code Extension, die das nervige Tab-Hopping zwischen IONOS und Hetzner C
 - **Copy IP → Update DNS**: Server-IP kopieren, dann auf Domain anwenden – ohne Copy-Paste-Fehler
 - **DevOps Clipboard**: Internes Clipboard für den Workflow zwischen Providern
 
+### 🗺️ DevOps Map (Visuelle Übersicht)
+- **Interaktive Mindmap**: Alle Accounts, Projekte, Domains, Server und Records in einer visuellen Übersicht
+- **Flexible Filter**:
+  - Single/Multi-Select Modus pro Filter-Kategorie (Typ, Provider, Projekt)
+  - Schnellsuche für sofortige Filterung
+- **Darstellungsoptionen**:
+  - **Layout-Modi**: Hierarchisch, Kreis, Grid, Force-Directed
+  - **Node-Größe**: 50% - 200% anpassbar
+  - **Verbindungsstile**: Gerade, Gebogen, Gestrichelt
+  - **Verbindungsstärke**: 1-5px einstellbar
+  - **Labels**: Ein/Ausblenden
+  - **Node-Farben**: Nach Typ, Provider, Projekt oder Status
+- **Interaktion**: Zoom, Pan, Zentrieren, Reset View
+- **Export**: JSON-Export der gesamten Map-Daten
+
 ---
 
 ## Installation

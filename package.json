@@ -24,10 +24,7 @@
     "server",
     "infrastructure"
   ],
-  "activationEvents": [
-    "onView:devopsDomainsView",
-    "onView:devopsComputeView"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -43,11 +40,13 @@
       "devops-hybrid": [
         {
           "id": "devopsDomainsView",
-          "name": "DOMAINS (IONOS)"
+          "name": "DOMAINS (IONOS)",
+          "icon": "$(globe)"
         },
         {
           "id": "devopsComputeView",
-          "name": "COMPUTE (HETZNER)"
+          "name": "COMPUTE (HETZNER)",
+          "icon": "$(server)"
         }
       ]
     },
