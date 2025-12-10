@@ -2656,55 +2656,998 @@ nein ich meinte, jede domain einzeln wählbar und nicht einfach nur alle
 
 _**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
+Der Benutzer sagt, dass er jede Domain einzeln wählen möchte, nicht nur alle Domains an/aus. Das habe ich eigentlich schon implementiert - jede Domain sollte als separate Checkbox erscheinen in der `domainsFilterList`. 
 
+Lass mich den Code nochmal überprüfen, um sicherzustellen, dass die individuelle Auswahl funktioniert. Ich schaue mir die mindmap.html an, um zu sehen, ob die Implementierung korrekt ist.</details></think>
 
 ---
 
-
+Das habe ich bereits implementiert! Lass mich überprüfen, ob es korrekt funktioniert:
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file">
-<details>
-<summary>Tool use: **read_file**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
 
 </details>
 </tool-use>
 
 ---
 
-
-
----
-
-
+<think><details><summary>Thought Process</summary>
+Die Datei scheint minifiziert oder hat ein Problem. Lass mich die Datei lesen, um zu sehen, was passiert ist.</details></think>
 
 ---
 
-
-
----
-
-
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="run_terminal_cmd">
-<details>
-<summary>Tool use: **run_terminal_cmd**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
+Die Datei ist leer oder nur ein Zeichen. Das ist ein Problem. Ich muss die Datei wiederherstellen. Ich werde die mindmap.html aus dem Git-Repository wiederherstellen.</details></think>
 
+---
+
+Die Datei scheint beschädigt zu sein. Ich stelle sie wieder her:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git checkout HEAD -- resources/webview/mindmap.html</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git checkout HEAD -- resources/webview/mindmap.html
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Die Datei sollte jetzt wiederhergestellt sein. Lass mich sie lesen, um zu sehen, ob die individuelle Filter-Logik für Domains schon vorhanden ist.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Es sieht so aus, als ob die Datei aus dem Git-Repository wiederhergestellt wurde, aber jetzt ist es die alte Version ohne die individuellen Filter für Domains, Server, etc. Ich muss die individuelle Auswahl-Funktion noch implementieren.
+
+Ich verstehe jetzt, was der Benutzer möchte:
+- Nicht nur "alle Domains an/aus", sondern jede einzelne Domain als eigene Checkbox
+- Das gleiche für Server, Projekte, Accounts
+- Jedes Element soll einzeln auswählbar sein
+
+Ich muss die HTML-Struktur und die JavaScript-Logik komplett überarbeiten.</details></think>
+
+---
+
+Ich sehe - die Datei wurde auf die alte Version zurückgesetzt. Ich implementiere jetzt die individuelle Auswahl für jede Domain, jeden Server, jedes Projekt und jeden Account:
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 54, lines removed: 47
+
+```diff
+@@ -288,58 +288,65 @@
+              &lt;/div&gt;
+              
+-             &lt;div class="control-group"&gt;
+-                 &lt;label&gt;🎯 Filter: Typ&lt;/label&gt;
+-                 &lt;div class="filter-mode-toggle"&gt;
+-                     &lt;button id="typeFilterModeMulti" class="active" onclick="setFilterMode('type', 'multi')"&gt;Multi&lt;/button&gt;
+-                     &lt;button id="typeFilterModeSingle" onclick="setFilterMode('type', 'single')"&gt;Single&lt;/button&gt;
+-                 &lt;/div&gt;
+-                 &lt;div class="checkbox-group" id="typeFilterGroup"&gt;
+-                     &lt;div class="checkbox-item"&gt;
+-                         &lt;input type="checkbox" id="filter-account" checked onchange="handleSingleSelectFilter('type', 'filter-account'); applyFilters()"&gt;
+-                         &lt;label for="filter-account"&gt;Accounts&lt;/label&gt;
+-                     &lt;/div&gt;
+-                     &lt;div class="checkbox-item"&gt;
+-                         &lt;input type="checkbox" id="filter-project" checked onchange="handleSingleSelectFilter('type', 'filter-project'); applyFilters()"&gt;
+-                         &lt;label for="filter-project"&gt;Projekte&lt;/label&gt;
+-                     &lt;/div&gt;
+-                     &lt;div class="checkbox-item"&gt;
+-                         &lt;input type="checkbox" id="filter-domain" checked onchange="handleSingleSelectFilter('type', 'filter-domain'); applyFilters()"&gt;
+-                         &lt;label for="filter-domain"&gt;Domains&lt;/label&gt;
++             &lt;div class="control-group collapsible"&gt;
++                 &lt;label onclick="toggleSection('accountsSection')"&gt;👤 Accounts &lt;span class="toggle-icon"&gt;▼&lt;/span&gt;&lt;/label&gt;
++                 &lt;div class="checkbox-group" id="accountsSection"&gt;
++                     &lt;div class="checkbox-item select-all"&gt;
++                         &lt;input type="checkbox" id="filter-accounts-all" checked onchange="toggleAllInGroup('accounts')"&gt;
++                         &lt;label for="filter-accounts-all"&gt;&lt;strong&gt;Alle/Keine&lt;/strong&gt;&lt;/label&gt;
++                     &lt;/div&gt;
++                     &lt;div id="accountsFilterList"&gt;&lt;/div&gt;
++                 &lt;/div&gt;
++             &lt;/div&gt;
++             
++             &lt;div class="control-group collapsible"&gt;
++                 &lt;label onclick="toggleSection('projectsSection')"&gt;📁 Projekte &lt;span class="toggle-icon"&gt;▼&lt;/span&gt;&lt;/label&gt;
++                 &lt;div class="checkbox-group" id="projectsSection"&gt;
++                     &lt;div class="checkbox-item select-all"&gt;
++                         &lt;input type="checkbox" id="filter-projects-all" checked onchange="toggleAllInGroup('projects')"&gt;
++                         &lt;label for="filter-projects-all"&gt;&lt;strong&gt;Alle/Keine&lt;/strong&gt;&lt;/label&gt;
+                      &lt;/div&gt;
+-                     &lt;div class="checkbox-item"&gt;
+-                         &lt;input type="checkbox" id="filter-server" checked onchange="handleSingleSelectFilter('type', 'filter-server'); applyFilters()"&gt;
+-                         &lt;label for="filter-server"&gt;Server&lt;/label&gt;
+-                     &lt;/div&gt;
+-                     &lt;div class="checkbox-item"&gt;
+-                         &lt;input type="checkbox" id="filter-record" checked onchange="handleSingleSelectFilter('type', 'filter-record'); applyFilters()"&gt;
+-                         &lt;label for="filter-record"&gt;Records&lt;/label&gt;
+-                     &lt;/div&gt;
+-                 &lt;/div&gt;
++                     &lt;div id="projectsFilterList"&gt;&lt;/div&gt;
++                 &lt;/div&gt;
++             &lt;/div&gt;
++             
++             &lt;div class="control-group collapsible"&gt;
++                 &lt;label onclick="toggleSection('domainsSection')"&gt;🌐 Domains &lt;span class="toggle-icon"&gt;▼&lt;/span&gt;&lt;/label&gt;
++                 &lt;div class="checkbox-group" id="domainsSection"&gt;
++                     &lt;div class="checkbox-item select-all"&gt;
++                         &lt;input type="checkbox" id="filter-domains-all" checked onchange="toggleAllInGroup('domains')"&gt;
++                         &lt;label for="filter-domains-all"&gt;&lt;strong&gt;Alle/Keine&lt;/strong&gt;&lt;/label&gt;
++                     &lt;/div&gt;
++                     &lt;div id="domainsFilterList"&gt;&lt;/div&gt;
++                 &lt;/div&gt;
+              &lt;/div&gt;
+              
+-             &lt;div class="control-group"&gt;
+-                 &lt;label&gt;🎯 Filter: Provider&lt;/label&gt;
+-                 &lt;div class="filter-mode-toggle"&gt;
+-                     &lt;button id="providerFilterModeMulti" class="active" onclick="setFilterMode('provider', 'multi')"&gt;Multi&lt;/button&gt;
+-                     &lt;button id="providerFilterModeSingle" onclick="setFilterMode('provider', 'single')"&gt;Single&lt;/button&gt;
+-                 &lt;/div&gt;
+-                 &lt;div class="checkbox-group" id="providerFilterGroup"&gt;
+-                     &lt;div class="checkbox-item"&gt;
+-                         &lt;input type="checkbox" id="filter-provider-all" checked onchange="toggleAllProviders()"&gt;
+-                         &lt;label for="filter-provider-all"&gt;Alle Provider&lt;/label&gt;
+-                     &lt;/div&gt;
++             &lt;div class="control-group collapsible"&gt;
++                 &lt;label onclick="toggleSection('serversSection')"&gt;🖥️ Server &lt;span class="toggle-icon"&gt;▼&lt;/span&gt;&lt;/label&gt;
++                 &lt;div class="checkbox-group" id="serversSection"&gt;
++                     &lt;div class="checkbox-item select-all"&gt;
++                         &lt;input type="checkbox" id="filter-servers-all" checked onchange="toggleAllInGroup('servers')"&gt;
++                         &lt;label for="filter-servers-all"&gt;&lt;strong&gt;Alle/Keine&lt;/strong&gt;&lt;/label&gt;
++                     &lt;/div&gt;
++                     &lt;div id="serversFilterList"&gt;&lt;/div&gt;
+                  &lt;/div&gt;
+              &lt;/div&gt;
+              
+-             &lt;div class="control-group"&gt;
+-                 &lt;label&gt;🎯 Filter: Projekt&lt;/label&gt;
+-                 &lt;div class="filter-mode-toggle"&gt;
+-                     &lt;button id="projectFilterModeMulti" class="active" onclick="setFilterMode('project', 'multi')"&gt;Multi&lt;/button&gt;
+-                     &lt;button id="projectFilterModeSingle" onclick="setFilterMode('project', 'single')"&gt;Single&lt;/button&gt;
+-                 &lt;/div&gt;
+-                 &lt;div class="checkbox-group" id="projectFilterGroup"&gt;
++             &lt;div class="control-group collapsible collapsed"&gt;
++                 &lt;label onclick="toggleSection('providersSection')"&gt;☁️ Provider &lt;span class="toggle-icon"&gt;▼&lt;/span&gt;&lt;/label&gt;
++                 &lt;div class="checkbox-group" id="providersSection"&gt;
++                     &lt;div class="checkbox-item select-all"&gt;
++                         &lt;input type="checkbox" id="filter-providers-all" checked onchange="toggleAllInGroup('providers')"&gt;
++                         &lt;label for="filter-providers-all"&gt;&lt;strong&gt;Alle/Keine&lt;/strong&gt;&lt;/label&gt;
++                     &lt;/div&gt;
++                     &lt;div id="providersFilterList"&gt;&lt;/div&gt;
++                 &lt;/div&gt;
++             &lt;/div&gt;
++             
++             &lt;div class="control-group collapsible collapsed"&gt;
++                 &lt;label onclick="toggleSection('recordsSection')"&gt;📝 Records &lt;span class="toggle-icon"&gt;▼&lt;/span&gt;&lt;/label&gt;
++                 &lt;div class="checkbox-group" id="recordsSection"&gt;
+                      &lt;div class="checkbox-item"&gt;
+-                         &lt;input type="checkbox" id="filter-project-all" checked onchange="toggleAllProjects()"&gt;
+-                         &lt;label for="filter-project-all"&gt;Alle Projekte&lt;/label&gt;
++                         &lt;input type="checkbox" id="filter-records-show" checked onchange="applyFilters()"&gt;
++                         &lt;label for="filter-records-show"&gt;Records anzeigen&lt;/label&gt;
+                      &lt;/div&gt;
+                  &lt;/div&gt;
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Jetzt muss ich die CSS für die collapsible-Sektionen hinzufügen und die JavaScript-Funktionen für die individuelle Auswahl implementieren.</details></think>
+
+---
+
+Hinzufügen der CSS-Styles für die neuen Filter:
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 32, lines removed: undefined
+
+```diff
+@@ -178,4 +178,36 @@
+              color: var(--vscode-descriptionForeground);
+          }
++         .collapsible &gt; label {
++             cursor: pointer;
++             display: flex;
++             justify-content: space-between;
++             align-items: center;
++         }
++         .toggle-icon {
++             font-size: 10px;
++             transition: transform 0.2s;
++         }
++         .collapsible.collapsed .toggle-icon {
++             transform: rotate(-90deg);
++         }
++         .collapsible.collapsed .checkbox-group {
++             display: none;
++         }
++         .select-all {
++             border-bottom: 1px solid var(--vscode-input-border);
++             padding-bottom: 6px;
++             margin-bottom: 6px;
++         }
++         .filter-item-count {
++             font-size: 10px;
++             color: var(--vscode-descriptionForeground);
++             margin-left: auto;
++             padding-left: 8px;
++         }
++         .filter-item-status {
++             font-size: 12px;
++             margin-left: auto;
++             padding-left: 8px;
++         }
+          .zoom-controls {
+              display: flex;
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Jetzt muss ich die JavaScript-Funktionen für die neue Filter-Logik implementieren. Ich werde die `initializeFilters()` Funktion neu schreiben und die Hilfsfunktionen hinzufügen.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Ich muss die `initializeFilters()` Funktion und die zugehörigen Hilfsfunktionen komplett ersetzen. Die alten Funktionen `toggleAllProviders()`, `toggleAllProjects()`, `setFilterMode()`, und `handleSingleSelectFilter()` müssen entfernt werden.</details></think>
+
+---
+
+Ersetzen der JavaScript-Logik für die neuen Filter:
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 10, lines removed: 2
+
+```diff
+@@ -491,11 +491,19 @@
+          let filteredNodes = [];
+          let filteredConnections = [];
+-         let filterModes = { type: 'multi', provider: 'multi', project: 'multi' };
+          let nodeSize = 1;
+          let connectionStyle = 'straight';
+          let connectionWidth = 2;
+          let showLabels = true;
+          let nodeColorMode = 'type';
+- 
++         
++         // Track selected items for each category
++         let selectedItems = {
++             accounts: new Set(),
++             projects: new Set(),
++             domains: new Set(),
++             servers: new Set(),
++             providers: new Set()
++         };
++ 
+          window.addEventListener('message', event =&gt; {
+              const message = event.data;
+```
+
+**Chunk 2**
+Lines added: 124, lines removed: 74
+
+```diff
+@@ -512,87 +520,137 @@
+              if (!graphData) return;
+              
+-             // Populate provider filter
+-             const providerGroup = document.getElementById('providerFilterGroup');
++             // Clear previous filter lists
++             ['accounts', 'projects', 'domains', 'servers', 'providers'].forEach(group =&gt; {
++                 const list = document.getElementById(&#96;${group}FilterList&#96;);
++                 if (list) list.innerHTML = '';
++             });
++             
++             // Reset selected items
++             selectedItems = {
++                 accounts: new Set(),
++                 projects: new Set(),
++                 domains: new Set(),
++                 servers: new Set(),
++                 providers: new Set()
++             };
++             
++             // Populate accounts filter
++             const accountsList = document.getElementById('accountsFilterList');
++             graphData.accounts.forEach(acc =&gt; {
++                 selectedItems.accounts.add(acc.id);
++                 const item = createFilterItem('accounts', acc.id, acc.name, acc.provider);
++                 accountsList.appendChild(item);
++             });
++             
++             // Populate projects filter
++             const projectsList = document.getElementById('projectsFilterList');
++             graphData.projects.forEach(proj =&gt; {
++                 selectedItems.projects.add(proj.id);
++                 const item = createFilterItem('projects', proj.id, proj.name);
++                 projectsList.appendChild(item);
++             });
++             
++             // Populate domains filter - INDIVIDUAL DOMAINS!
++             const domainsList = document.getElementById('domainsFilterList');
++             graphData.domains.forEach(domain =&gt; {
++                 selectedItems.domains.add(domain.id);
++                 const recordCount = domain.records?.length || 0;
++                 const item = createFilterItem('domains', domain.id, domain.name, &#96;${recordCount} Records&#96;);
++                 domainsList.appendChild(item);
++             });
++             
++             // Populate servers filter - INDIVIDUAL SERVERS!
++             const serversList = document.getElementById('serversFilterList');
++             graphData.servers.forEach(server =&gt; {
++                 selectedItems.servers.add(server.id);
++                 const statusIcon = server.status === 'running' ? '🟢' : server.status === 'off' ? '🔴' : '🟡';
++                 const item = createFilterItem('servers', server.id, server.name, statusIcon);
++                 serversList.appendChild(item);
++             });
++             
++             // Populate providers filter
++             const providersList = document.getElementById('providersFilterList');
+              const providers = new Set();
+              graphData.accounts.forEach(acc =&gt; providers.add(acc.provider));
+              providers.forEach(prov =&gt; {
+-                 const item = document.createElement('div');
+-                 item.className = 'checkbox-item';
+-                 const checkbox = document.createElement('input');
+-                 checkbox.type = 'checkbox';
+-                 checkbox.id = &#96;filter-provider-${prov}&#96;;
+-                 checkbox.checked = true;
+-                 checkbox.onchange = () =&gt; {
+-                     handleSingleSelectFilter('provider', checkbox.id);
+-                     applyFilters();
+-                 };
+-                 const label = document.createElement('label');
+-                 label.htmlFor = checkbox.id;
+-                 label.textContent = prov;
+-                 item.appendChild(checkbox);
+-                 item.appendChild(label);
+-                 providerGroup.appendChild(item);
+-             });
+-             
+-             // Populate project filter
+-             const projectGroup = document.getElementById('projectFilterGroup');
+-             graphData.projects.forEach(proj =&gt; {
+-                 const item = document.createElement('div');
+-                 item.className = 'checkbox-item';
+-                 const checkbox = document.createElement('input');
+-                 checkbox.type = 'checkbox';
+-                 checkbox.id = &#96;filter-project-${proj.id}&#96;;
+-                 checkbox.checked = true;
+-                 checkbox.onchange = () =&gt; {
+-                     handleSingleSelectFilter('project', checkbox.id);
+-                     applyFilters();
+-                 };
+-                 const label = document.createElement('label');
+-                 label.htmlFor = checkbox.id;
+-                 label.textContent = proj.name;
+-                 item.appendChild(checkbox);
+-                 item.appendChild(label);
+-                 projectGroup.appendChild(item);
+-             });
+-         }
+-         
+-         function toggleAllProviders() {
+-             const allCheckbox = document.getElementById('filter-provider-all');
+-             const checkboxes = document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)');
+-             checkboxes.forEach(cb =&gt; cb.checked = allCheckbox.checked);
+-             applyFilters();
+-         }
++                 selectedItems.providers.add(prov);
++                 const item = createFilterItem('providers', prov, prov);
++                 providersList.appendChild(item);
++             });
++             
++             // Update counts in labels
++             updateFilterCounts();
++         }
++         
++         function createFilterItem(group, id, name, extra = '') {
++             const item = document.createElement('div');
++             item.className = 'checkbox-item';
++             
++             const checkbox = document.createElement('input');
++             checkbox.type = 'checkbox';
++             checkbox.id = &#96;filter-${group}-${id}&#96;;
++             checkbox.checked = true;
++             checkbox.onchange = () =&gt; {
++                 if (checkbox.checked) {
++                     selectedItems[group].add(id);
++                 } else {
++                     selectedItems[group].delete(id);
++                 }
++                 updateGroupAllCheckbox(group);
++                 applyFilters();
++             };
++             
++             const label = document.createElement('label');
++             label.htmlFor = checkbox.id;
++             label.textContent = name;
++             
++             item.appendChild(checkbox);
++             item.appendChild(label);
++             
++             if (extra) {
++                 const extraSpan = document.createElement('span');
++                 extraSpan.className = extra.length &lt;= 3 ? 'filter-item-status' : 'filter-item-count';
++                 extraSpan.textContent = extra;
++                 item.appendChild(extraSpan);
++             }
++             
++             return item;
++         }
+          
+-         function toggleAllProjects() {
+-             const allCheckbox = document.getElementById('filter-project-all');
+-             const checkboxes = document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)');
+-             checkboxes.forEach(cb =&gt; cb.checked = allCheckbox.checked);
+-             applyFilters();
++         function toggleSection(sectionId) {
++             const section = document.getElementById(sectionId);
++             const controlGroup = section.closest('.control-group');
++             controlGroup.classList.toggle('collapsed');
+          }
+          
+-         function setFilterMode(category, mode) {
+-             filterModes[category] = mode;
+-             const multiBtn = document.getElementById(&#96;${category}FilterModeMulti&#96;);
+-             const singleBtn = document.getElementById(&#96;${category}FilterModeSingle&#96;);
+-             if (mode === 'multi') {
+-                 multiBtn.classList.add('active');
+-                 singleBtn.classList.remove('active');
+-             } else {
+-                 singleBtn.classList.add('active');
+-                 multiBtn.classList.remove('active');
+-             }
++         function toggleAllInGroup(group) {
++             const allCheckbox = document.getElementById(&#96;filter-${group}-all&#96;);
++             const isChecked = allCheckbox.checked;
++             
++             document.querySelectorAll(&#96;#${group}FilterList input[type="checkbox"]&#96;).forEach(cb =&gt; {
++                 cb.checked = isChecked;
++                 const id = cb.id.replace(&#96;filter-${group}-&#96;, '');
++                 if (isChecked) {
++                     selectedItems[group].add(id);
++                 } else {
++                     selectedItems[group].delete(id);
++                 }
++             });
++             
+              applyFilters();
+          }
+          
+-         function handleSingleSelectFilter(category, clickedId) {
+-             if (filterModes[category] !== 'single') return;
+-             const groupId = &#96;${category}FilterGroup&#96;;
+-             const checkboxes = document.querySelectorAll(&#96;#${groupId} input[type="checkbox"]&#96;);
+-             checkboxes.forEach(cb =&gt; {
+-                 if (cb.id !== clickedId) {
+-                     cb.checked = false;
+-                 }
+-             });
+-             applyFilters();
++         function updateGroupAllCheckbox(group) {
++             const allCheckbox = document.getElementById(&#96;filter-${group}-all&#96;);
++             const checkboxes = document.querySelectorAll(&#96;#${group}FilterList input[type="checkbox"]&#96;);
++             const allChecked = Array.from(checkboxes).every(cb =&gt; cb.checked);
++             const someChecked = Array.from(checkboxes).some(cb =&gt; cb.checked);
++             
++             allCheckbox.checked = allChecked;
++             allCheckbox.indeterminate = !allChecked &amp;&amp; someChecked;
++         }
++         
++         function updateFilterCounts() {
++             // Could add count badges to section labels if desired
+          }
+  
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Jetzt muss ich die `applyFilters()` Funktion aktualisieren, damit sie die neue Filterlogik verwendet.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Ich muss die alte `applyFilters()` Funktion durch eine neue ersetzen, die die individuelle Auswahl verwendet.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Ich muss die gesamte `applyFilters()` Funktion ersetzen mit einer neuen Version, die die individuelle Auswahl von Domains, Servern, etc. verwendet.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 14, lines removed: 64
+
+```diff
+@@ -814,73 +814,23 @@
+  
+          function applyFilters() {
+-             // Handle single-select mode for type filter
+-             if (filterModes.type === 'single') {
+-                 const checked = document.querySelectorAll('#typeFilterGroup input[type="checkbox"]:checked');
+-                 if (checked.length &gt; 1) {
+-                     // If multiple checked in single mode, uncheck all except the last one
+-                     checked.forEach((cb, idx) =&gt; {
+-                         if (idx &lt; checked.length - 1) cb.checked = false;
+-                     });
+-                 }
+-             }
+-             
+-             // Get type filters
+-             const typeFilters = {
+-                 account: document.getElementById('filter-account').checked,
+-                 project: document.getElementById('filter-project').checked,
+-                 domain: document.getElementById('filter-domain').checked,
+-                 server: document.getElementById('filter-server').checked,
+-                 record: document.getElementById('filter-record').checked
+-             };
+-             
+-             // Handle single-select mode for provider filter
+-             if (filterModes.provider === 'single') {
+-                 const checked = document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all):checked');
+-                 if (checked.length &gt; 1) {
+-                     checked.forEach((cb, idx) =&gt; {
+-                         if (idx &lt; checked.length - 1) cb.checked = false;
+-                     });
+-                 }
+-             }
+-             
+-             // Get provider filters
+-             const providerFilters = new Set();
+-             document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)').forEach(cb =&gt; {
+-                 if (cb.checked) {
+-                     providerFilters.add(cb.id.replace('filter-provider-', ''));
+-                 }
+-             });
+-             const allProviders = document.getElementById('filter-provider-all').checked || filterModes.provider === 'single';
+-             
+-             // Handle single-select mode for project filter
+-             if (filterModes.project === 'single') {
+-                 const checked = document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all):checked');
+-                 if (checked.length &gt; 1) {
+-                     checked.forEach((cb, idx) =&gt; {
+-                         if (idx &lt; checked.length - 1) cb.checked = false;
+-                     });
+-                 }
+-             }
+-             
+-             // Get project filters
+-             const projectFilters = new Set();
+-             document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)').forEach(cb =&gt; {
+-                 if (cb.checked) {
+-                     projectFilters.add(cb.id.replace('filter-project-', ''));
+-                 }
+-             });
+-             const allProjects = document.getElementById('filter-project-all').checked || filterModes.project === 'single';
+-             
++             const showRecords = document.getElementById('filter-records-show').checked;
+              const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  
+              filteredNodes = allNodes.filter(node =&gt; {
+-                 // Type filter
+-                 if (!typeFilters[node.type]) return false;
++                 // Individual item filters
++                 if (node.type === 'account' &amp;&amp; !selectedItems.accounts.has(node.id)) return false;
++                 if (node.type === 'project' &amp;&amp; !selectedItems.projects.has(node.id)) return false;
++                 if (node.type === 'domain' &amp;&amp; !selectedItems.domains.has(node.id)) return false;
++                 if (node.type === 'server' &amp;&amp; !selectedItems.servers.has(node.id)) return false;
++                 
++                 // Records: check if show records is enabled AND parent domain is selected
++                 if (node.type === 'record') {
++                     if (!showRecords) return false;
++                     const parentDomainId = node.id.split('-')[0];
++                     if (!selectedItems.domains.has(parentDomainId)) return false;
++                 }
+                  
+                  // Provider filter
+-                 if (!allProviders &amp;&amp; node.provider &amp;&amp; !providerFilters.has(node.provider)) return false;
+-                 
+-                 // Project filter
+-                 if (!allProjects &amp;&amp; node.projectId &amp;&amp; !projectFilters.has(node.projectId)) return false;
++                 if (node.provider &amp;&amp; !selectedItems.providers.has(node.provider)) return false;
+                  
+                  // Search filter
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Jetzt muss ich noch die `resetView()` Funktion aktualisieren, um die neuen Filter zurückzusetzen.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Die `resetView()` Funktion muss aktualisiert werden, um die neuen Filter zurückzusetzen. Ich werde die alte Version durch eine neue ersetzen.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 23, lines removed: 20
+
+```diff
+@@ -1022,24 +1022,27 @@
+          function resetView() {
+              resetZoom();
+-             // Reset filter modes
+-             filterModes = { type: 'multi', provider: 'multi', project: 'multi' };
+-             document.getElementById('typeFilterModeMulti').classList.add('active');
+-             document.getElementById('typeFilterModeSingle').classList.remove('active');
+-             document.getElementById('providerFilterModeMulti').classList.add('active');
+-             document.getElementById('providerFilterModeSingle').classList.remove('active');
+-             document.getElementById('projectFilterModeMulti').classList.add('active');
+-             document.getElementById('projectFilterModeSingle').classList.remove('active');
+-             // Reset type filters
+-             document.getElementById('filter-account').checked = true;
+-             document.getElementById('filter-project').checked = true;
+-             document.getElementById('filter-domain').checked = true;
+-             document.getElementById('filter-server').checked = true;
+-             document.getElementById('filter-record').checked = true;
+-             // Reset provider filters
+-             document.getElementById('filter-provider-all').checked = true;
+-             document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)').forEach(cb =&gt; cb.checked = true);
+-             // Reset project filters
+-             document.getElementById('filter-project-all').checked = true;
+-             document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)').forEach(cb =&gt; cb.checked = true);
++             
++             // Reset all individual item filters
++             ['accounts', 'projects', 'domains', 'servers', 'providers'].forEach(group =&gt; {
++                 const allCheckbox = document.getElementById(&#96;filter-${group}-all&#96;);
++                 if (allCheckbox) {
++                     allCheckbox.checked = true;
++                     allCheckbox.indeterminate = false;
++                 }
++                 document.querySelectorAll(&#96;#${group}FilterList input[type="checkbox"]&#96;).forEach(cb =&gt; {
++                     cb.checked = true;
++                     const id = cb.id.replace(&#96;filter-${group}-&#96;, '');
++                     selectedItems[group].add(id);
++                 });
++             });
++             
++             // Reset records toggle
++             document.getElementById('filter-records-show').checked = true;
++             
++             // Expand all sections
++             document.querySelectorAll('.control-group.collapsible').forEach(cg =&gt; {
++                 cg.classList.remove('collapsed');
++             });
++             
+              // Reset display options
+              layoutMode = 'hierarchical';
+```
+
+**Chunk 2**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -1059,4 +1062,5 @@
+              document.getElementById('searchInput').value = '';
+              document.getElementById('quickSearch').value = '';
++             
+              renderGraph();
+          }
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Jetzt muss ich noch die Breite der Controls anpassen und dann kompilieren, packen und installieren.</details></think>
+
+---
+
+Kompilieren, packen und installieren:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npm run compile</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npm run compile
+```
+
+```
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Kompilierung erfolgreich. Jetzt packen wir die VSIX und committen.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npx @vscode/vsce package</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npx @vscode/vsce package
+```
+
+```
+Executing prepublish script 'npm run vscode:prepublish'...
+
+&gt; devops-hybrid@0.4.0 vscode:prepublish
+&gt; npm run compile
+
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+ INFO  Files included in the VSIX:
+devops-hybrid-0.4.0.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ .cursorindexingignore [0.11 KB]
+   ├─ LICENSE.txt [1.06 KB]
+   ├─ changelog.md [1.81 KB]
+   ├─ package.json [13.63 KB]
+   ├─ readme.md [8.59 KB]
+   ├─ .cursor/
+   │  └─ worktrees.json [0.05 KB]
+   ├─ .specstory/
+   │  ├─ .gitignore [0.09 KB]
+   │  ├─ .project.json [0.22 KB]
+   │  ├─ .what-is-this.md [3.3 KB]
+   │  └─ history/ (4 files) [947.07 KB]
+   ├─ out/
+   │  ├─ extension.js [5.78 KB]
+   │  ├─ bridge/ (4 files) [48.83 KB]
+   │  ├─ core/ (4 files) [12.99 KB]
+   │  ├─ providers/ (5 files) [45.64 KB]
+   │  ├─ util/ (5 files) [8.89 KB]
+   │  └─ views/ (3 files) [21.12 KB]
+   └─ resources/
+      └─ webview/ (1 file) [47.97 KB]
+
+=&gt; Run vsce ls --tree to see all included files.
+
+ DONE  Packaged: D:\DevOpsTool\devops-hybrid-0.4.0.vsix (38 files, 229.31 KB)
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+VSIX gepackt. Jetzt committen, pushen und installieren.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git add .; git commit -m "feat: DevOps Map - Individuelle Auswahl fuer jede Domain, Server, Account, Projekt"</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git add .; git commit -m "feat: DevOps Map - Individuelle Auswahl fuer jede Domain, Server, Account, Projekt"
+```
+
+```
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.cursor/worktrees.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-individuelle-auswahl-von-entitäten-1.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-individuelle-auswahl-von-entitäten-2.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-individuelle-auswahl-von-entitäten.md', LF will be replaced by CRLF the next time Git touches it
+[main 9526776] feat: DevOps Map - Individuelle Auswahl fuer jede Domain, Server, Account, Projekt
+ 7 files changed, 24959 insertions(+), 23738 deletions(-)
+ create mode 100644 .cursor/worktrees.json
+ delete mode 100644 .specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-2.md
+ rename .specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-1.md =&gt; ".specstory/history/2025-12-10_01-30Z-individuelle-auswahl-von-entit\303\244ten-1.md" (61%)
+ rename .specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-3.md =&gt; ".specstory/history/2025-12-10_01-30Z-individuelle-auswahl-von-entit\303\244ten-2.md" (87%)
+ create mode 100644 ".specstory/history/2025-12-10_01-30Z-individuelle-auswahl-von-entit\303\244ten.md"
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Commit erfolgreich. Jetzt pushen und installieren.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git push</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git push
+```
+
+```
+To https://github.com/donapart/DevOpsTool.git
+   85fa1fd..9526776  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Gepusht. Jetzt die Extension in VS Code und Cursor installieren.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: & "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force; & "C:\Users\donApart\AppData\Local\Programs\cursor\resources\app\bin\cursor.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force</summary>
+
+```bash
+& "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force; & "C:\Users\donApart\AppData\Local\Programs\cursor\resources\app\bin\cursor.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force
+```
+
+```
+Installing extensions...
+Extension 'devops-hybrid-0.4.0.vsix' was successfully installed.
+Installing extensions...
+Extension 'devops-hybrid-0.4.0.vsix' was successfully installed.
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Beide Installationen erfolgreich.</details></think>
+
+---
+
+Fertig! Hier ist was jetzt implementiert ist:
+
+## ✅ Individuelle Auswahl für alle Elemente
+
+Die DevOps Map hat jetzt **separate Filter-Sektionen** mit individueller Auswahl:
+
+| Sektion | Was kannst du auswählen |
+|---------|------------------------|
+| **👤 Accounts** | Jeder Account einzeln (z.B. "IONOS Account 1", "Hetzner Prod") |
+| **📁 Projekte** | Jedes Projekt einzeln (z.B. "Website A", "API Backend") |
+| **🌐 Domains** | **Jede Domain einzeln** (z.B. "example.com", "test.de") mit Record-Anzahl |
+| **🖥️ Server** | **Jeder Server einzeln** (z.B. "web-01", "db-01") mit Status 🟢/🔴/🟡 |
+| **☁️ Provider** | Jeder Provider einzeln (z.B. "ionos-dns", "hetzner-cloud") |
+| **📝 Records** | Records ein/ausblenden (für weniger Clutter) |
+
+### Features:
+- **Alle/Keine**: Ein Klick um alle Elemente einer Kategorie zu (de)selektieren
+- **Auf-/Zuklappen**: Jede Sektion kann eingeklappt werden (▼)
+- **Indeterminate State**: Checkbox zeigt an wenn nur einige ausgewählt sind
+- **Status-Icons**: Server zeigen 🟢 running, 🔴 off, 🟡 migrating
+- **Record-Count**: Domains zeigen Anzahl der Records
+
+```
+✅ Kompiliert
+✅ VSIX gepackt
+✅ Git commit & push
+✅ VS Code + Cursor installiert
+```
+
+**Starte VS Code/Cursor neu** und öffne die DevOps Map (`Ctrl+Shift+P` → "DevOps: Show Map"). Jetzt kannst du z.B. nur "example.com" und "server-01" anzeigen!
+
+---
+
+_**User (2025-12-10 07:44Z)**_
+
+devops map zeigt noch keine verbindungslinien
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+Der Benutzer sagt, dass die DevOps Map keine Verbindungslinien zeigt. Ich muss mir den Code ansehen, um zu verstehen, warum die Verbindungen nicht angezeigt werden.</details></think>
 
 ---
 

@@ -852,16 +852,24 @@
             const canvas = document.getElementById('canvas');
             canvas.innerHTML = '';
 
+            // Calculate canvas bounds for SVG size
+            let maxX = 0, maxY = 0;
+            filteredNodes.forEach(node => {
+                maxX = Math.max(maxX, node.x + 200);
+                maxY = Math.max(maxY, node.y + 100);
+            });
+            
             // Create SVG for connections (behind nodes)
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             svg.id = 'connections-svg';
             svg.style.position = 'absolute';
             svg.style.top = '0';
             svg.style.left = '0';
-            svg.style.width = '100%';
-            svg.style.height = '100%';
+            svg.style.width = Math.max(maxX, 2000) + 'px';
+            svg.style.height = Math.max(maxY, 2000) + 'px';
             svg.style.pointerEvents = 'none';
             svg.style.zIndex = '1';
+            svg.style.overflow = 'visible';
             canvas.appendChild(svg);
 
             // Render nodes first (so they're on top)
@@ -902,6 +910,9 @@
             });
 
             // Render connections after nodes (so they appear behind)
+            // Get computed color once (CSS variables don't work directly in SVG attributes)
+            const strokeColor = getComputedStyle(document.body).getPropertyValue('--vscode-textLink-foreground').trim() || '#3794ff';
+            
             filteredConnections.forEach(conn => {
                 const fromNode = filteredNodes.find(n => n.id === conn.from);
                 const toNode = filteredNodes.find(n => n.id === conn.to);
@@ -920,9 +931,9 @@
                     const d = `M ${x1} ${y1} Q ${midX} ${midY - curveOffset}, ${x2} ${y2}`;
                     path.setAttribute('d', d);
                     path.setAttribute('fill', 'none');
-                    path.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
+                    path.setAttribute('stroke', strokeColor);
                     path.setAttribute('stroke-width', connectionWidth);
-                    path.setAttribute('opacity', '0.6');
+                    path.setAttribute('opacity', '0.7');
                     svg.appendChild(path);
                 } else {
                     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -930,9 +941,9 @@
                     line.setAttribute('y1', y1);
                     line.setAttribute('x2', x2);
                     line.setAttribute('y2', y2);
-                    line.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
+                    line.setAttribute('stroke', strokeColor);
                     line.setAttribute('stroke-width', connectionWidth);
-                    line.setAttribute('opacity', '0.6');
+                    line.setAttribute('opacity', '0.7');
                     if (connectionStyle === 'dashed') {
                         line.setAttribute('stroke-dasharray', '5,5');
                     }
