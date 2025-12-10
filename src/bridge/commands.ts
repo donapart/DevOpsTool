@@ -54,7 +54,7 @@ export function registerBridgeCommands(
     pm: ProviderManager,
     ionosProvider: IonosDnsProvider,
     hetznerProvider: HetznerCloudProvider,
-    onAccountsChanged: () => void
+    onAccountsChanged: () => Promise<void>
 ) {
     context.subscriptions.push(
         // =============================================
@@ -86,7 +86,7 @@ export function registerBridgeCommands(
 
                 await ionosProvider.updateRecord(node.domainId, node.record.id, clipboardIp, undefined, node.accountId);
                 vscode.window.showInformationMessage(`✅ ${node.record.name}.${node.domainName} → ${clipboardIp}`);
-                onAccountsChanged();
+                await onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'updateRecordFromClipboard failed', err);
                 await showError(err);
@@ -107,7 +107,7 @@ export function registerBridgeCommands(
 
                 await ionosProvider.updateRecord(node.domainId, node.record.id, newValue, undefined, node.accountId);
                 vscode.window.showInformationMessage(`✅ Record aktualisiert: ${newValue}`);
-                onAccountsChanged();
+                await onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'editRecord failed', err);
                 await showError(err);
@@ -163,7 +163,7 @@ export function registerBridgeCommands(
                 });
 
                 vscode.window.showInformationMessage(`✅ ${node.server.name} wird neu gestartet.`);
-                onAccountsChanged();
+                await onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'serverReboot failed', err);
                 await showError(err);
@@ -187,7 +187,7 @@ export function registerBridgeCommands(
                 });
 
                 vscode.window.showInformationMessage(`✅ ${node.server.name} wurde heruntergefahren.`);
-                onAccountsChanged();
+                await onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'serverPowerOff failed', err);
                 await showError(err);
@@ -206,7 +206,7 @@ export function registerBridgeCommands(
                 });
 
                 vscode.window.showInformationMessage(`✅ ${node.server.name} wird gestartet.`);
-                onAccountsChanged();
+                await onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'serverPowerOn failed', err);
                 await showError(err);
@@ -224,7 +224,7 @@ export function registerBridgeCommands(
 
                 await hetznerProvider.resetServer(node.server.id, node.accountId);
                 vscode.window.showInformationMessage(`✅ ${node.server.name} wurde zurückgesetzt.`);
-                onAccountsChanged();
+                await onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'serverReset failed', err);
                 await showError(err);
@@ -256,7 +256,7 @@ export function registerBridgeCommands(
                     await hetznerProvider.rebootServer(node.server.id, node.accountId);
                 }
                 
-                onAccountsChanged();
+                await onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'serverRescue failed', err);
                 await showError(err);
@@ -352,7 +352,7 @@ async function setRecordTtl(
 
         await ionosProvider.setRecordTtl(node.domainId, node.record.id, ttl, node.accountId);
         vscode.window.showInformationMessage(`✅ TTL auf ${ttl}s gesetzt.`);
-        onAccountsChanged();
+        await onAccountsChanged();
     } catch (err) {
         logError(TAG, `setTtl${ttl} failed`, err);
         await showError(err);

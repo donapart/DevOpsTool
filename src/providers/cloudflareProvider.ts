@@ -218,4 +218,3 @@ export class CloudflareProvider implements IDnsProvider {
     this.invalidateCache();
   }
 }
-

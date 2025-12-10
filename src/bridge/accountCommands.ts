@@ -18,7 +18,7 @@ const TAG = 'AccountCommands';
 export function registerAccountCommands(
     context: vscode.ExtensionContext,
     accountManager: AccountManager,
-    onAccountsChanged: () => void
+    onAccountsChanged: () => Promise<void>
 ) {
     context.subscriptions.push(
         // =============================================
@@ -114,7 +114,7 @@ export function registerAccountCommands(
                 vscode.window.showInformationMessage(`✅ Account "${name}" hinzugefügt!`);
                 logInfo(TAG, `Added account: ${name} (${provider})`);
                 
-                onAccountsChanged();
+                await onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'Failed to add account', err);
                 vscode.window.showErrorMessage(`Fehler: ${err}`);
@@ -217,7 +217,7 @@ export function registerAccountCommands(
                     }
                 }
 
-                onAccountsChanged();
+                await onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'Failed to edit account', err);
                 vscode.window.showErrorMessage(`Fehler: ${err}`);
@@ -274,7 +274,7 @@ export function registerAccountCommands(
                 await accountManager.deleteAccount(account.id);
                 vscode.window.showInformationMessage(`✅ Account "${account.name}" gelöscht.`);
                 
-                onAccountsChanged();
+                await onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'Failed to delete account', err);
                 vscode.window.showErrorMessage(`Fehler: ${err}`);
@@ -320,4 +320,3 @@ export function registerAccountCommands(
         })
     );
 }
-

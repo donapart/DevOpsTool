@@ -285,4 +285,3 @@ export class AccountManager {
         return migrated;
     }
 }
-

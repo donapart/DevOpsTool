@@ -2,7 +2,7 @@
   "name": "devops-hybrid",
   "displayName": "DevOps Hybrid Cockpit",
   "description": "Hybrid Cloud Management for IONOS and Hetzner within VS Code. Manage DNS records and Cloud servers without leaving your editor.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "donapart",
   "repository": {
     "type": "git",
