@@ -240,4 +240,3 @@ function formatStatusAsMarkdown(report: StatusReport): string {
 
     return lines.join('\n');
 }
-

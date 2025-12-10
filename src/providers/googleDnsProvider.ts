@@ -236,7 +236,8 @@ export class GoogleDnsProvider implements IDnsProvider {
           const records: DnsRecord[] = (recordsData.rrsets || [])
             .filter((r: any) => ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS'].includes(r.type))
             .map((r: any) => ({
-              id: `${zone.name}-${r.name}-${r.type}`,
+              // Use '::' as separator to avoid conflicts with dashes in zone/record names
+              id: `${zone.name}::${r.name}::${r.type}`,
               type: r.type,
               name: r.name.replace(`.${zone.dnsName}`, '').replace(/\.$/, '') || '@',
               value: r.rrdatas?.[0] || '',
@@ -283,8 +284,13 @@ export class GoogleDnsProvider implements IDnsProvider {
 
     logInfo(TAG, `Updating record ${recordId} in zone ${domainId} (Account: ${account.name})`);
 
-    // Parse record ID to get name and type
-    const [zoneName, recordName, recordType] = recordId.split('-');
+    // Parse record ID to get zone name, record name and type
+    // Format: zoneName::recordName::recordType (using '::' separator to avoid conflicts with dashes)
+    const parts = recordId.split('::');
+    if (parts.length !== 3) {
+      throw new Error(`Invalid record ID format: ${recordId}. Expected format: zoneName::recordName::recordType`);
+    }
+    const [zoneName, recordName, recordType] = parts;
 
     // Parse key to get project ID
     let key: ServiceAccountKey;

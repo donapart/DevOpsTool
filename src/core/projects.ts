@@ -191,4 +191,3 @@ export class ProjectManager {
     await this.globalState.update(PROJECTS_KEY, store);
   }
 }
-

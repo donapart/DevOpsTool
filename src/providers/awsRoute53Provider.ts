@@ -144,6 +144,7 @@ export class AwsRoute53Provider implements IDnsProvider {
     // Calculate signature
     const getSignatureKey = (key: string, dateStamp: string, regionName: string, serviceName: string): Buffer => {
       const kDate = crypto.createHmac('sha256', `AWS4${key}`).update(dateStamp).digest();
+      // TypeScript workaround: Buffer from digest() needs cast for createHmac
       const kRegion = crypto.createHmac('sha256', kDate as any).update(regionName).digest();
       const kService = crypto.createHmac('sha256', kRegion as any).update(serviceName).digest();
       const kSigning = crypto.createHmac('sha256', kService as any).update('aws4_request').digest();
@@ -252,8 +253,9 @@ export class AwsRoute53Provider implements IDnsProvider {
       const valueMatch = /<Value>(.*?)<\/Value>/.exec(match[4]);
       const value = valueMatch ? valueMatch[1] : '';
 
+      // Use '::' as separator to avoid conflicts with dashes in domain names
       records.push({
-        id: `${match[1]}-${type}`,
+        id: `${match[1]}::${type}`,
         type: type as DnsRecord['type'],
         name: match[1].replace(zoneName, '').replace(/\.$/, '') || '@',
         value,
@@ -279,9 +281,13 @@ export class AwsRoute53Provider implements IDnsProvider {
     const { accessKeyId, secretAccessKey } = this.parseCredentials(credentials);
 
     // Parse record ID to get name and type
-    const lastDash = recordId.lastIndexOf('-');
-    const recordName = recordId.substring(0, lastDash);
-    const recordType = recordId.substring(lastDash + 1);
+    // Format: recordName::recordType (using '::' separator to avoid conflicts with dashes)
+    const separatorIndex = recordId.lastIndexOf('::');
+    if (separatorIndex === -1) {
+      throw new Error(`Invalid record ID format: ${recordId}. Expected format: recordName::recordType`);
+    }
+    const recordName = recordId.substring(0, separatorIndex);
+    const recordType = recordId.substring(separatorIndex + 2);
 
     // Build change batch XML
     const changeXml = `<?xml version="1.0" encoding="UTF-8"?>

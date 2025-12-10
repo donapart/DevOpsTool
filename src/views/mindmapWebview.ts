@@ -228,4 +228,3 @@ export class MindmapWebviewProvider {
     return html;
   }
 }
-
