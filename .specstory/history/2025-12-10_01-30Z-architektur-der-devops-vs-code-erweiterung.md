@@ -17072,7 +17072,6 @@ _**Agent (model default, mode Agent)**_
 
 ---
 
-
 Installiere die Extension in Cursor:
 
 
@@ -17098,7 +17097,6 @@ Extension 'devops-hybrid-0.4.0.vsix' was successfully installed.
 
 ---
 
-
 **Installation abgeschlossen**
 
 Die Extension wurde in beiden Editoren installiert:
@@ -17122,6 +17120,1039 @@ Die Extension wurde in beiden Editoren installiert:
 - Status-Dashboard (`Ctrl+Shift+P` → "DevOps: Show Status Report")
 
 Die Extension ist einsatzbereit.
+
+---
+
+_**User (2025-12-10 04:51Z)**_
+
+commiten und push
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+Prüfe den Git-Status, committe und pushe:
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\bin;" + $env:Path; git status</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\bin;" + $env:Path; git status
+```
+
+```
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   .specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+```
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\bin;" + $env:Path; git add -A; git commit -m "docs: Update history with installation steps"; git push</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\bin;" + $env:Path; git add -A; git commit -m "docs: Update history with installation steps"; git push
+```
+
+```
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung.md', LF will be replaced by CRLF the next time Git touches it
+[main 7d70f8a] docs: Update history with installation steps
+ 1 file changed, 354 insertions(+)
+To https://github.com/donapart/DevOpsTool.git
+   338f1b0..7d70f8a  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+**Fertig.** Änderungen committed und gepusht.
+
+```
+main -> main (7d70f8a)
+```
+
+**Was wurde committed:**
+- History-Update mit Installationsschritten für VS Code und Cursor
+
+Repository ist auf dem neuesten Stand.
+
+---
+
+_**User (2025-12-10 04:51Z)**_
+
+auf der DevOps Map brauchen wir noch filter, zoom, ...
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+Erweitere die DevOps Map um Filter, Zoom und weitere Navigationsfeatures:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+Erweitere die DevOps Map um Filter, Zoom und weitere Features:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 8, lines removed: undefined
+
+```diff
+@@ -18,4 +18,12 @@
+              height: 100vh;
+              position: relative;
++             overflow: hidden;
++         }
++         #canvas {
++             position: absolute;
++             top: 0;
++             left: 0;
++             transform-origin: 0 0;
++             transition: transform 0.1s;
+          }
+          #controls {
+```
+
+**Chunk 2**
+Lines added: 14, lines removed: undefined
+
+```diff
+@@ -28,4 +36,18 @@
+              border-radius: 4px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
++             display: flex;
++             flex-direction: column;
++             gap: 8px;
++             min-width: 200px;
++         }
++         .control-group {
++             display: flex;
++             flex-direction: column;
++             gap: 4px;
++         }
++         .control-group label {
++             font-size: 11px;
++             font-weight: bold;
++             margin-bottom: 4px;
+          }
+          button {
+```
+
+**Chunk 3**
+Lines added: 30, lines removed: undefined
+
+```diff
+@@ -37,8 +59,38 @@
+              border-radius: 2px;
+              cursor: pointer;
++             font-size: 11px;
+          }
+          button:hover {
+              background: var(--vscode-button-hoverBackground);
+          }
++         button:disabled {
++             opacity: 0.5;
++             cursor: not-allowed;
++         }
++         input[type="text"], select {
++             background: var(--vscode-input-background);
++             color: var(--vscode-input-foreground);
++             border: 1px solid var(--vscode-input-border);
++             padding: 4px 8px;
++             border-radius: 2px;
++             font-size: 11px;
++         }
++         input[type="text"]:focus, select:focus {
++             outline: 1px solid var(--vscode-focusBorder);
++         }
++         .zoom-controls {
++             display: flex;
++             gap: 4px;
++             align-items: center;
++         }
++         .zoom-controls button {
++             min-width: 30px;
++             padding: 4px 8px;
++         }
++         .zoom-level {
++             min-width: 50px;
++             text-align: center;
++             font-size: 11px;
++         }
+          .node {
+              position: absolute;
+```
+
+**Chunk 4**
+Lines added: 11, lines removed: 1
+
+```diff
+@@ -48,9 +100,19 @@
+              font-size: 12px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+-             transition: transform 0.2s;
++             transition: transform 0.2s, opacity 0.2s;
++             white-space: nowrap;
+          }
+          .node:hover {
+              transform: scale(1.1);
+              z-index: 100;
++             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
++         }
++         .node.hidden {
++             opacity: 0.2;
++             pointer-events: none;
++         }
++         .node.highlighted {
++             outline: 2px solid var(--vscode-textLink-foreground);
++             outline-offset: 2px;
+          }
+          .node-account { background: var(--vscode-badge-background); }
+```
+
+**Chunk 5**
+Lines added: 4, lines removed: undefined
+
+```diff
+@@ -64,4 +126,8 @@
+              stroke: var(--vscode-textLink-foreground);
+              stroke-width: 2;
++             transition: opacity 0.2s;
++         }
++         .connection.hidden {
++             opacity: 0.1;
+          }
+          .legend {
+```
+
+**Chunk 6**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -74,4 +140,5 @@
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+              font-size: 11px;
++             z-index: 1000;
+          }
+          .legend-item {
+```
+
+**Chunk 7**
+Lines added: 76, lines removed: 4
+
+```diff
+@@ -86,13 +153,85 @@
+              margin-right: 8px;
+          }
++         .search-box {
++             position: absolute;
++             top: 10px;
++             right: 10px;
++             z-index: 1000;
++             background: var(--vscode-editor-background);
++             padding: 10px;
++             border-radius: 4px;
++             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
++         }
++         .search-box input {
++             width: 200px;
++         }
++         .stats {
++             position: absolute;
++             top: 10px;
++             left: 230px;
++             z-index: 1000;
++             background: var(--vscode-editor-background);
++             padding: 8px 12px;
++             border-radius: 4px;
++             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
++             font-size: 11px;
++         }
+      &lt;/style&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+      &lt;div id="map-container"&gt;
++         &lt;div id="canvas"&gt;&lt;/div&gt;
++         
+          &lt;div id="controls"&gt;
+-             &lt;button onclick="resetView()"&gt;Reset View&lt;/button&gt;
+-             &lt;button onclick="toggleLayout()"&gt;Toggle Layout&lt;/button&gt;
+-             &lt;button onclick="exportData()"&gt;Export JSON&lt;/button&gt;
+-         &lt;/div&gt;
++             &lt;div class="control-group"&gt;
++                 &lt;label&gt;🔍 Suche&lt;/label&gt;
++                 &lt;input type="text" id="searchInput" placeholder="Domain, Server, Projekt..." oninput="handleSearch()"&gt;
++             &lt;/div&gt;
++             
++             &lt;div class="control-group"&gt;
++                 &lt;label&gt;🎯 Filter&lt;/label&gt;
++                 &lt;select id="typeFilter" onchange="applyFilters()"&gt;
++                     &lt;option value="all"&gt;Alle Typen&lt;/option&gt;
++                     &lt;option value="account"&gt;Accounts&lt;/option&gt;
++                     &lt;option value="project"&gt;Projekte&lt;/option&gt;
++                     &lt;option value="domain"&gt;Domains&lt;/option&gt;
++                     &lt;option value="server"&gt;Server&lt;/option&gt;
++                     &lt;option value="record"&gt;Records&lt;/option&gt;
++                 &lt;/select&gt;
++                 &lt;select id="providerFilter" onchange="applyFilters()"&gt;
++                     &lt;option value="all"&gt;Alle Provider&lt;/option&gt;
++                 &lt;/select&gt;
++                 &lt;select id="projectFilter" onchange="applyFilters()"&gt;
++                     &lt;option value="all"&gt;Alle Projekte&lt;/option&gt;
++                 &lt;/select&gt;
++             &lt;/div&gt;
++             
++             &lt;div class="control-group"&gt;
++                 &lt;label&gt;🔎 Zoom&lt;/label&gt;
++                 &lt;div class="zoom-controls"&gt;
++                     &lt;button onclick="zoomOut()" title="Rauszoomen"&gt;-&lt;/button&gt;
++                     &lt;span class="zoom-level" id="zoomLevel"&gt;100%&lt;/span&gt;
++                     &lt;button onclick="zoomIn()" title="Reinzoomen"&gt;+&lt;/button&gt;
++                     &lt;button onclick="resetZoom()" title="Zoom zurücksetzen"&gt;Reset&lt;/button&gt;
++                 &lt;/div&gt;
++             &lt;/div&gt;
++             
++             &lt;div class="control-group"&gt;
++                 &lt;label&gt;⚙️ Ansicht&lt;/label&gt;
++                 &lt;button onclick="resetView()"&gt;Reset View&lt;/button&gt;
++                 &lt;button onclick="toggleLayout()"&gt;Toggle Layout&lt;/button&gt;
++                 &lt;button onclick="centerView()"&gt;Zentrieren&lt;/button&gt;
++                 &lt;button onclick="exportData()"&gt;Export JSON&lt;/button&gt;
++             &lt;/div&gt;
++         &lt;/div&gt;
++         
++         &lt;div class="search-box"&gt;
++             &lt;input type="text" id="quickSearch" placeholder="Schnellsuche..." oninput="quickSearch()"&gt;
++         &lt;/div&gt;
++         
++         &lt;div class="stats" id="stats"&gt;
++             &lt;span id="statsText"&gt;Lade...&lt;/span&gt;
++         &lt;/div&gt;
++         
+          &lt;div id="legend" class="legend"&gt;
+              &lt;div class="legend-item"&gt;
+```
+
+**Chunk 8**
+Lines added: 11, lines removed: 1
+
+```diff
+@@ -117,5 +256,15 @@
+          const vscode = acquireVsCodeApi();
+          let graphData = null;
+-         let layoutMode = 'hierarchical'; // 'hierarchical' or 'force'
++         let layoutMode = 'hierarchical';
++         let zoomLevel = 1;
++         let panX = 0;
++         let panY = 0;
++         let isPanning = false;
++         let startPanX = 0;
++         let startPanY = 0;
++         let allNodes = [];
++         let allConnections = [];
++         let filteredNodes = [];
++         let filteredConnections = [];
+  
+          window.addEventListener('message', event =&gt; {
+```
+
+**Chunk 9**
+Lines added: 30, lines removed: 29
+
+```diff
+@@ -124,41 +273,42 @@
+                  case 'updateGraph':
+                      graphData = message.data;
++                     initializeFilters();
+                      renderGraph();
+                      break;
+              }
+          });
++ 
++         function initializeFilters() {
++             if (!graphData) return;
++             
++             // Populate provider filter
++             const providerSelect = document.getElementById('providerFilter');
++             const providers = new Set();
++             graphData.accounts.forEach(acc =&gt; providers.add(acc.provider));
++             providers.forEach(prov =&gt; {
++                 const option = document.createElement('option');
++                 option.value = prov;
++                 option.textContent = prov;
++                 providerSelect.appendChild(option);
++             });
++             
++             // Populate project filter
++             const projectSelect = document.getElementById('projectFilter');
++             graphData.projects.forEach(proj =&gt; {
++                 const option = document.createElement('option');
++                 option.value = proj.id;
++                 option.textContent = proj.name;
++                 projectSelect.appendChild(option);
++             });
++         }
+  
+          function renderGraph() {
+              if (!graphData) return;
+  
+-             const container = document.getElementById('map-container');
+-             container.innerHTML = &#96;
+-                 &lt;div id="controls"&gt;
+-                     &lt;button onclick="resetView()"&gt;Reset View&lt;/button&gt;
+-                     &lt;button onclick="toggleLayout()"&gt;Toggle Layout&lt;/button&gt;
+-                     &lt;button onclick="exportData()"&gt;Export JSON&lt;/button&gt;
+-                 &lt;/div&gt;
+-                 &lt;div id="legend" class="legend"&gt;
+-                     &lt;div class="legend-item"&gt;
+-                         &lt;div class="legend-color" style="background: var(--vscode-badge-background);"&gt;&lt;/div&gt;
+-                         &lt;span&gt;Account&lt;/span&gt;
+-                     &lt;/div&gt;
+-                     &lt;div class="legend-item"&gt;
+-                         &lt;div class="legend-color" style="background: var(--vscode-textBlockQuote-background);"&gt;&lt;/div&gt;
+-                         &lt;span&gt;Projekt&lt;/span&gt;
+-                     &lt;/div&gt;
+-                     &lt;div class="legend-item"&gt;
+-                         &lt;div class="legend-color" style="background: var(--vscode-textCodeBlock-background);"&gt;&lt;/div&gt;
+-                         &lt;span&gt;Domain&lt;/span&gt;
+-                     &lt;/div&gt;
+-                     &lt;div class="legend-item"&gt;
+-                         &lt;div class="legend-color" style="background: var(--vscode-inputValidation-infoBackground);"&gt;&lt;/div&gt;
+-                         &lt;span&gt;Server&lt;/span&gt;
+-                     &lt;/div&gt;
+-                 &lt;/div&gt;
+-             &#96;;
+- 
+-             const nodes = [];
+-             const connections = [];
++             const canvas = document.getElementById('canvas');
++             canvas.innerHTML = '';
++ 
++             allNodes = [];
++             allConnections = [];
+              let yPos = 50;
+              const xSpacing = 200;
+```
+
+**Chunk 10**
+Lines added: 4, lines removed: 2
+
+```diff
+@@ -169,9 +319,11 @@
+                  const x = 50;
+                  const y = yPos;
+-                 nodes.push({
++                 allNodes.push({
+                      id: account.id,
+                      type: 'account',
+                      label: account.name,
+-                     x, y
++                     x, y,
++                     provider: account.provider,
++                     data: account
+                  });
+                  yPos += ySpacing;
+```
+
+**Chunk 11**
+Lines added: 5, lines removed: 3
+
+```diff
+@@ -184,11 +336,13 @@
+                      const px = x + xSpacing;
+                      const py = y + (projIdx * 60);
+-                     nodes.push({
++                     allNodes.push({
+                          id: project.id,
+                          type: 'project',
+                          label: project.name,
+-                         x: px, y: py
++                         x: px, y: py,
++                         projectId: project.id,
++                         data: project
+                      });
+-                     connections.push({ from: account.id, to: project.id });
++                     allConnections.push({ from: account.id, to: project.id });
+                  });
+  
+```
+
+**Chunk 12**
+Lines added: 8, lines removed: 6
+
+```diff
+@@ -198,16 +352,18 @@
+                      const dx = x + xSpacing * 2;
+                      const dy = y + (domIdx * 50);
+-                     nodes.push({
++                     const domainResource = graphData.resources.find(r =&gt; r.id === domain.id &amp;&amp; r.providerId === domain.providerId);
++                     allNodes.push({
+                          id: domain.id,
+                          type: 'domain',
+                          label: domain.name,
+-                         x: dx, y: dy
++                         x: dx, y: dy,
++                         provider: domain.providerId,
++                         projectId: domainResource?.projectId,
++                         data: domain
+                      });
+-                     connections.push({ from: account.id, to: domain.id });
++                     allConnections.push({ from: account.id, to: domain.id });
+  
+-                     // Link to project if assigned
+-                     const domainResource = graphData.resources.find(r =&gt; r.id === domain.id &amp;&amp; r.providerId === domain.providerId);
+                      if (domainResource?.projectId) {
+-                         connections.push({ from: domainResource.projectId, to: domain.id });
++                         allConnections.push({ from: domainResource.projectId, to: domain.id });
+                      }
+  
+```
+
+**Chunk 13**
+Lines added: 5, lines removed: 3
+
+```diff
+@@ -216,11 +372,13 @@
+                          const rx = dx + xSpacing;
+                          const ry = dy + (recIdx * 30);
+-                         nodes.push({
++                         allNodes.push({
+                              id: &#96;${domain.id}-${record.id}&#96;,
+                              type: 'record',
+                              label: &#96;${record.type} ${record.name}&#96;,
+-                             x: rx, y: ry
++                             x: rx, y: ry,
++                             provider: domain.providerId,
++                             data: record
+                          });
+-                         connections.push({ from: domain.id, to: &#96;${domain.id}-${record.id}&#96; });
++                         allConnections.push({ from: domain.id, to: &#96;${domain.id}-${record.id}&#96; });
+                      });
+                  });
+```
+
+**Chunk 14**
+Lines added: 11, lines removed: 8
+
+```diff
+@@ -231,16 +389,19 @@
+                      const sx = x + xSpacing * 2;
+                      const sy = y + (srvIdx * 50) + 200;
+-                     nodes.push({
++                     const serverResource = graphData.resources.find(r =&gt; r.id === server.id &amp;&amp; r.providerId === server.providerId);
++                     allNodes.push({
+                          id: server.id,
+                          type: 'server',
+                          label: server.name,
+-                         x: sx, y: sy
+-                     });
+-                     connections.push({ from: account.id, to: server.id });
+- 
+-                     // Link to project if assigned
+-                     const serverResource = graphData.resources.find(r =&gt; r.id === server.id &amp;&amp; r.providerId === server.providerId);
++                         x: sx, y: sy,
++                         provider: server.providerId,
++                         projectId: serverResource?.projectId,
++                         status: server.status,
++                         data: server
++                     });
++                     allConnections.push({ from: account.id, to: server.id });
++ 
+                      if (serverResource?.projectId) {
+-                         connections.push({ from: serverResource.projectId, to: server.id });
++                         allConnections.push({ from: serverResource.projectId, to: server.id });
+                      }
+  
+```
+
+**Chunk 15**
+Lines added: 65, lines removed: 4
+
+```diff
+@@ -249,18 +410,79 @@
+                          domain.records.forEach(record =&gt; {
+                              if ((record.type === 'A' || record.type === 'AAAA') &amp;&amp; record.value === server.publicIp) {
+-                                 connections.push({ from: &#96;${domain.id}-${record.id}&#96;, to: server.id });
++                                 allConnections.push({ from: &#96;${domain.id}-${record.id}&#96;, to: server.id });
+                              }
+                          });
+                      });
+                  });
+              });
++ 
++             applyFilters();
++             updateStats();
++         }
++ 
++         function applyFilters() {
++             const typeFilter = document.getElementById('typeFilter').value;
++             const providerFilter = document.getElementById('providerFilter').value;
++             const projectFilter = document.getElementById('projectFilter').value;
++             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
++ 
++             filteredNodes = allNodes.filter(node =&gt; {
++                 if (typeFilter !== 'all' &amp;&amp; node.type !== typeFilter) return false;
++                 if (providerFilter !== 'all' &amp;&amp; node.provider !== providerFilter) return false;
++                 if (projectFilter !== 'all' &amp;&amp; node.projectId !== projectFilter) return false;
++                 if (searchTerm &amp;&amp; !node.label.toLowerCase().includes(searchTerm)) return false;
++                 return true;
++             });
++ 
++             // Filter connections to only show connections between visible nodes
++             const visibleNodeIds = new Set(filteredNodes.map(n =&gt; n.id));
++             filteredConnections = allConnections.filter(conn =&gt; 
++                 visibleNodeIds.has(conn.from) &amp;&amp; visibleNodeIds.has(conn.to)
++             );
++ 
++             renderFilteredGraph();
++         }
++ 
++         function renderFilteredGraph() {
++             const canvas = document.getElementById('canvas');
++             canvas.innerHTML = '';
++ 
++             // Create SVG for connections
++             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
++             svg.style.position = 'absolute';
++             svg.style.width = '100%';
++             svg.style.height = '100%';
++             svg.style.pointerEvents = 'none';
++             svg.style.zIndex = '0';
++             canvas.appendChild(svg);
++ 
++             // Render connections
++             filteredConnections.forEach(conn =&gt; {
++                 const fromNode = filteredNodes.find(n =&gt; n.id === conn.from);
++                 const toNode = filteredNodes.find(n =&gt; n.id === conn.to);
++                 if (!fromNode || !toNode) return;
++ 
++                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
++                 const x1 = (fromNode.x + 50) * zoomLevel + panX;
++                 const y1 = (fromNode.y + 20) * zoomLevel + panY;
++                 const x2 = (toNode.x + 50) * zoomLevel + panX;
++                 const y2 = (toNode.y + 20) * zoomLevel + panY;
++                 line.setAttribute('x1', x1);
++                 line.setAttribute('y1', y1);
++                 line.setAttribute('x2', x2);
++                 line.setAttribute('y2', y2);
++                 line.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
++                 line.setAttribute('stroke-width', 2 * zoomLevel);
++                 svg.appendChild(line);
++             });
+  
+              // Render nodes
+-             nodes.forEach(node =&gt; {
++             filteredNodes.forEach(node =&gt; {
+                  const nodeEl = document.createElement('div');
+                  nodeEl.className = &#96;node node-${node.type}&#96;;
+                  nodeEl.textContent = node.label;
+-                 nodeEl.style.left = node.x + 'px';
+-                 nodeEl.style.top = node.y + 'px';
++                 nodeEl.style.left = (node.x * zoomLevel + panX) + 'px';
++                 nodeEl.style.top = (node.y * zoomLevel + panY) + 'px';
++                 nodeEl.style.fontSize = (12 * zoomLevel) + 'px';
+                  nodeEl.onclick = () =&gt; {
+                      vscode.postMessage({
+```
+
+**Chunk 16**
+Lines added: 78, lines removed: 24
+
+```diff
+@@ -270,34 +492,88 @@
+                      });
+                  };
+-                 container.appendChild(nodeEl);
++                 canvas.appendChild(nodeEl);
+              });
+  
+-             // Render connections
+-             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+-             svg.style.position = 'absolute';
+-             svg.style.width = '100%';
+-             svg.style.height = '100%';
+-             svg.style.pointerEvents = 'none';
+-             svg.style.zIndex = '0';
+-             container.appendChild(svg);
+- 
+-             connections.forEach(conn =&gt; {
+-                 const fromNode = nodes.find(n =&gt; n.id === conn.from);
+-                 const toNode = nodes.find(n =&gt; n.id === conn.to);
+-                 if (!fromNode || !toNode) return;
+- 
+-                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+-                 line.setAttribute('x1', fromNode.x + 50);
+-                 line.setAttribute('y1', fromNode.y + 20);
+-                 line.setAttribute('x2', toNode.x + 50);
+-                 line.setAttribute('y2', toNode.y + 20);
+-                 line.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
+-                 line.setAttribute('stroke-width', '2');
+-                 svg.appendChild(line);
++             updateTransform();
++         }
++ 
++         function updateTransform() {
++             const canvas = document.getElementById('canvas');
++             canvas.style.transform = &#96;translate(${panX}px, ${panY}px) scale(${zoomLevel})&#96;;
++             document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
++         }
++ 
++         function zoomIn() {
++             zoomLevel = Math.min(zoomLevel * 1.2, 3);
++             updateTransform();
++         }
++ 
++         function zoomOut() {
++             zoomLevel = Math.max(zoomLevel / 1.2, 0.1);
++             updateTransform();
++         }
++ 
++         function resetZoom() {
++             zoomLevel = 1;
++             panX = 0;
++             panY = 0;
++             updateTransform();
++         }
++ 
++         function centerView() {
++             if (filteredNodes.length === 0) return;
++             const bounds = filteredNodes.reduce((acc, node) =&gt; {
++                 return {
++                     minX: Math.min(acc.minX, node.x),
++                     maxX: Math.max(acc.maxX, node.x),
++                     minY: Math.min(acc.minY, node.y),
++                     maxY: Math.max(acc.maxY, node.y)
++                 };
++             }, { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
++ 
++             const centerX = (bounds.minX + bounds.maxX) / 2;
++             const centerY = (bounds.minY + bounds.maxY) / 2;
++             panX = window.innerWidth / 2 - centerX * zoomLevel;
++             panY = window.innerHeight / 2 - centerY * zoomLevel;
++             updateTransform();
++         }
++ 
++         function handleSearch() {
++             applyFilters();
++         }
++ 
++         function quickSearch() {
++             const term = document.getElementById('quickSearch').value.toLowerCase();
++             if (!term) {
++                 filteredNodes.forEach(n =&gt; {
++                     const el = document.querySelector(&#96;[data-node-id="${n.id}"]&#96;);
++                     if (el) el.classList.remove('highlighted');
++                 });
++                 return;
++             }
++ 
++             filteredNodes.forEach(node =&gt; {
++                 const matches = node.label.toLowerCase().includes(term);
++                 const nodeEl = Array.from(canvas.children).find(el =&gt; 
++                     el.textContent === node.label &amp;&amp; el.classList.contains('node')
++                 );
++                 if (nodeEl) {
++                     if (matches) {
++                         nodeEl.classList.add('highlighted');
++                     } else {
++                         nodeEl.classList.remove('highlighted');
++                     }
++                 }
+              });
+          }
+  
+          function resetView() {
+-             renderGraph();
++             resetZoom();
++             document.getElementById('typeFilter').value = 'all';
++             document.getElementById('providerFilter').value = 'all';
++             document.getElementById('projectFilter').value = 'all';
++             document.getElementById('searchInput').value = '';
++             document.getElementById('quickSearch').value = '';
++             applyFilters();
+          }
+  
+```
+
+**Chunk 17**
+Lines added: 46, lines removed: undefined
+
+```diff
+@@ -316,4 +592,50 @@
+              }
+          }
++ 
++         function updateStats() {
++             const stats = {
++                 total: allNodes.length,
++                 visible: filteredNodes.length,
++                 accounts: allNodes.filter(n =&gt; n.type === 'account').length,
++                 projects: allNodes.filter(n =&gt; n.type === 'project').length,
++                 domains: allNodes.filter(n =&gt; n.type === 'domain').length,
++                 servers: allNodes.filter(n =&gt; n.type === 'server').length,
++                 records: allNodes.filter(n =&gt; n.type === 'record').length
++             };
++             document.getElementById('statsText').textContent = 
++                 &#96;${stats.visible}/${stats.total} sichtbar | &#96; +
++                 &#96;A:${stats.accounts} P:${stats.projects} D:${stats.domains} S:${stats.servers} R:${stats.records}&#96;;
++         }
++ 
++         // Pan with mouse drag
++         let isDragging = false;
++         let dragStartX = 0;
++         let dragStartY = 0;
++ 
++         document.getElementById('map-container').addEventListener('mousedown', (e) =&gt; {
++             if (e.target.classList.contains('node')) return;
++             isDragging = true;
++             dragStartX = e.clientX - panX;
++             dragStartY = e.clientY - panY;
++         });
++ 
++         document.addEventListener('mousemove', (e) =&gt; {
++             if (!isDragging) return;
++             panX = e.clientX - dragStartX;
++             panY = e.clientY - dragStartY;
++             updateTransform();
++         });
++ 
++         document.addEventListener('mouseup', () =&gt; {
++             isDragging = false;
++         });
++ 
++         // Zoom with mouse wheel
++         document.getElementById('map-container').addEventListener('wheel', (e) =&gt; {
++             e.preventDefault();
++             const delta = e.deltaY &gt; 0 ? 0.9 : 1.1;
++             zoomLevel = Math.max(0.1, Math.min(3, zoomLevel * delta));
++             updateTransform();
++         });
+  
+          // Request initial data
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; npm run compile</summary>
+
+```bash
+$env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; npm run compile
+```
+
+```
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+
+```
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+Korrigiere einen kleinen Bug bei den Node-IDs:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -482,4 +482,5 @@
+                  nodeEl.className = &#96;node node-${node.type}&#96;;
+                  nodeEl.textContent = node.label;
++                 nodeEl.setAttribute('data-node-id', node.id);
+                  nodeEl.style.left = (node.x * zoomLevel + panX) + 'px';
+                  nodeEl.style.top = (node.y * zoomLevel + panY) + 'px';
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 4, lines removed: 3
+
+```diff
+@@ -546,8 +546,9 @@
+          function quickSearch() {
+              const term = document.getElementById('quickSearch').value.toLowerCase();
++             const canvas = document.getElementById('canvas');
++             
+              if (!term) {
+-                 filteredNodes.forEach(n =&gt; {
+-                     const el = document.querySelector(&#96;[data-node-id="${n.id}"]&#96;);
+-                     if (el) el.classList.remove('highlighted');
++                 canvas.querySelectorAll('.node.highlighted').forEach(el =&gt; {
++                     el.classList.remove('highlighted');
+                  });
+                  return;
+```
+
+**Chunk 2**
+Lines added: 1, lines removed: 3
+
+```diff
+@@ -556,7 +557,5 @@
+              filteredNodes.forEach(node =&gt; {
+                  const matches = node.label.toLowerCase().includes(term);
+-                 const nodeEl = Array.from(canvas.children).find(el =&gt; 
+-                     el.textContent === node.label &amp;&amp; el.classList.contains('node')
+-                 );
++                 const nodeEl = canvas.querySelector(&#96;[data-node-id="${node.id}"]&#96;);
+                  if (nodeEl) {
+                      if (matches) {
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; vsce package --allow-missing-repository</summary>
+
+```bash
+$env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; vsce package --allow-missing-repository
+```
+
+```
+Executing prepublish script 'npm run vscode:prepublish'...
+
+&gt; devops-hybrid@0.4.0 vscode:prepublish
+&gt; npm run compile
+
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+ DONE  Packaged: D:\DevOpsTool\devops-hybrid-0.4.0.vsix (34 files, 159.71KB)
+
+```
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+**DevOps Map erweitert**
+
+## Neue Features
+
+### Filter
+- Typ-Filter: Accounts, Projekte, Domains, Server, Records
+- Provider-Filter: Nach Provider filtern
+- Projekt-Filter: Nach Projekt filtern
+- Suchfeld: Echtzeit-Suche nach Namen
+
+### Zoom & Navigation
+- Zoom: Mausrad oder +/- Buttons (10% - 300%)
+- Pan: Mit Maus ziehen zum Verschieben
+- Zentrieren: Button zum Zentrieren der Ansicht
+- Zoom-Level: Aktueller Zoom wird angezeigt
+
+### Schnellsuche
+- Highlight: Suchbegriff hebt passende Nodes hervor
+- Echtzeit: Sofortiges Feedback beim Tippen
+
+### Statistiken
+- Live-Statistiken: Anzahl sichtbarer/gesamter Nodes
+- Aufschlüsselung: Accounts, Projekte, Domains, Server, Records
+
+### Weitere Verbesserungen
+- Bessere Performance: Gefilterte Nodes werden effizient gerendert
+- Responsive: Zoom passt Schriftgröße und Verbindungen an
+- Reset View: Alle Filter zurücksetzen
+
+**Paketiert:** `devops-hybrid-0.4.0.vsix` (159.71KB)
+
+Soll ich committen und pushen?
 
 ---
 

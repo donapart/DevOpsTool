@@ -17,6 +17,14 @@
             width: 100vw;
             height: 100vh;
             position: relative;
+            overflow: hidden;
+        }
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+            transition: transform 0.1s;
         }
         #controls {
             position: absolute;
@@ -27,6 +35,20 @@
             padding: 10px;
             border-radius: 4px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 200px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .control-group label {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 4px;
         }
         button {
             background: var(--vscode-button-background);
@@ -36,9 +58,39 @@
             margin: 2px;
             border-radius: 2px;
             cursor: pointer;
+            font-size: 11px;
         }
         button:hover {
             background: var(--vscode-button-hoverBackground);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        input[type="text"], select {
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            padding: 4px 8px;
+            border-radius: 2px;
+            font-size: 11px;
+        }
+        input[type="text"]:focus, select:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+        }
+        .zoom-controls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .zoom-controls button {
+            min-width: 30px;
+            padding: 4px 8px;
+        }
+        .zoom-level {
+            min-width: 50px;
+            text-align: center;
+            font-size: 11px;
         }
         .node {
             position: absolute;
@@ -47,11 +99,21 @@
             cursor: pointer;
             font-size: 12px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
+            transition: transform 0.2s, opacity 0.2s;
+            white-space: nowrap;
         }
         .node:hover {
             transform: scale(1.1);
             z-index: 100;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+        .node.hidden {
+            opacity: 0.2;
+            pointer-events: none;
+        }
+        .node.highlighted {
+            outline: 2px solid var(--vscode-textLink-foreground);
+            outline-offset: 2px;
         }
         .node-account { background: var(--vscode-badge-background); }
         .node-project { background: var(--vscode-textBlockQuote-background); }
@@ -63,6 +125,10 @@
             pointer-events: none;
             stroke: var(--vscode-textLink-foreground);
             stroke-width: 2;
+            transition: opacity 0.2s;
+        }
+        .connection.hidden {
+            opacity: 0.1;
         }
         .legend {
             position: absolute;
@@ -73,6 +139,7 @@
             border-radius: 4px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             font-size: 11px;
+            z-index: 1000;
         }
         .legend-item {
             display: flex;
@@ -85,15 +152,87 @@
             border-radius: 2px;
             margin-right: 8px;
         }
+        .search-box {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: var(--vscode-editor-background);
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .search-box input {
+            width: 200px;
+        }
+        .stats {
+            position: absolute;
+            top: 10px;
+            left: 230px;
+            z-index: 1000;
+            background: var(--vscode-editor-background);
+            padding: 8px 12px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
     <div id="map-container">
+        <div id="canvas"></div>
+        
         <div id="controls">
-            <button onclick="resetView()">Reset View</button>
-            <button onclick="toggleLayout()">Toggle Layout</button>
-            <button onclick="exportData()">Export JSON</button>
+            <div class="control-group">
+                <label>🔍 Suche</label>
+                <input type="text" id="searchInput" placeholder="Domain, Server, Projekt..." oninput="handleSearch()">
+            </div>
+            
+            <div class="control-group">
+                <label>🎯 Filter</label>
+                <select id="typeFilter" onchange="applyFilters()">
+                    <option value="all">Alle Typen</option>
+                    <option value="account">Accounts</option>
+                    <option value="project">Projekte</option>
+                    <option value="domain">Domains</option>
+                    <option value="server">Server</option>
+                    <option value="record">Records</option>
+                </select>
+                <select id="providerFilter" onchange="applyFilters()">
+                    <option value="all">Alle Provider</option>
+                </select>
+                <select id="projectFilter" onchange="applyFilters()">
+                    <option value="all">Alle Projekte</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>🔎 Zoom</label>
+                <div class="zoom-controls">
+                    <button onclick="zoomOut()" title="Rauszoomen">-</button>
+                    <span class="zoom-level" id="zoomLevel">100%</span>
+                    <button onclick="zoomIn()" title="Reinzoomen">+</button>
+                    <button onclick="resetZoom()" title="Zoom zurücksetzen">Reset</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>⚙️ Ansicht</label>
+                <button onclick="resetView()">Reset View</button>
+                <button onclick="toggleLayout()">Toggle Layout</button>
+                <button onclick="centerView()">Zentrieren</button>
+                <button onclick="exportData()">Export JSON</button>
+            </div>
         </div>
+        
+        <div class="search-box">
+            <input type="text" id="quickSearch" placeholder="Schnellsuche..." oninput="quickSearch()">
+        </div>
+        
+        <div class="stats" id="stats">
+            <span id="statsText">Lade...</span>
+        </div>
+        
         <div id="legend" class="legend">
             <div class="legend-item">
                 <div class="legend-color" style="background: var(--vscode-badge-background);"></div>
@@ -116,50 +255,61 @@
     <script>
         const vscode = acquireVsCodeApi();
         let graphData = null;
-        let layoutMode = 'hierarchical'; // 'hierarchical' or 'force'
+        let layoutMode = 'hierarchical';
+        let zoomLevel = 1;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let startPanX = 0;
+        let startPanY = 0;
+        let allNodes = [];
+        let allConnections = [];
+        let filteredNodes = [];
+        let filteredConnections = [];
 
         window.addEventListener('message', event => {
             const message = event.data;
             switch (message.command) {
                 case 'updateGraph':
                     graphData = message.data;
+                    initializeFilters();
                     renderGraph();
                     break;
             }
         });
 
+        function initializeFilters() {
+            if (!graphData) return;
+            
+            // Populate provider filter
+            const providerSelect = document.getElementById('providerFilter');
+            const providers = new Set();
+            graphData.accounts.forEach(acc => providers.add(acc.provider));
+            providers.forEach(prov => {
+                const option = document.createElement('option');
+                option.value = prov;
+                option.textContent = prov;
+                providerSelect.appendChild(option);
+            });
+            
+            // Populate project filter
+            const projectSelect = document.getElementById('projectFilter');
+            graphData.projects.forEach(proj => {
+                const option = document.createElement('option');
+                option.value = proj.id;
+                option.textContent = proj.name;
+                projectSelect.appendChild(option);
+            });
+        }
+
         function renderGraph() {
             if (!graphData) return;
 
-            const container = document.getElementById('map-container');
-            container.innerHTML = `
-                <div id="controls">
-                    <button onclick="resetView()">Reset View</button>
-                    <button onclick="toggleLayout()">Toggle Layout</button>
-                    <button onclick="exportData()">Export JSON</button>
-                </div>
-                <div id="legend" class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: var(--vscode-badge-background);"></div>
-                        <span>Account</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: var(--vscode-textBlockQuote-background);"></div>
-                        <span>Projekt</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: var(--vscode-textCodeBlock-background);"></div>
-                        <span>Domain</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: var(--vscode-inputValidation-infoBackground);"></div>
-                        <span>Server</span>
-                    </div>
-                </div>
-            `;
+            const canvas = document.getElementById('canvas');
+            canvas.innerHTML = '';
 
-            const nodes = [];
-            const connections = [];
+            allNodes = [];
+            allConnections = [];
             let yPos = 50;
             const xSpacing = 200;
             const ySpacing = 100;
@@ -168,11 +318,13 @@
             graphData.accounts.forEach((account, accIdx) => {
                 const x = 50;
                 const y = yPos;
-                nodes.push({
+                allNodes.push({
                     id: account.id,
                     type: 'account',
                     label: account.name,
-                    x, y
+                    x, y,
+                    provider: account.provider,
+                    data: account
                 });
                 yPos += ySpacing;
 
@@ -183,13 +335,15 @@
                 accountProjects.forEach((project, projIdx) => {
                     const px = x + xSpacing;
                     const py = y + (projIdx * 60);
-                    nodes.push({
+                    allNodes.push({
                         id: project.id,
                         type: 'project',
                         label: project.name,
-                        x: px, y: py
+                        x: px, y: py,
+                        projectId: project.id,
+                        data: project
                     });
-                    connections.push({ from: account.id, to: project.id });
+                    allConnections.push({ from: account.id, to: project.id });
                 });
 
                 // Render domains
@@ -197,31 +351,35 @@
                 accountDomains.forEach((domain, domIdx) => {
                     const dx = x + xSpacing * 2;
                     const dy = y + (domIdx * 50);
-                    nodes.push({
+                    const domainResource = graphData.resources.find(r => r.id === domain.id && r.providerId === domain.providerId);
+                    allNodes.push({
                         id: domain.id,
                         type: 'domain',
                         label: domain.name,
-                        x: dx, y: dy
+                        x: dx, y: dy,
+                        provider: domain.providerId,
+                        projectId: domainResource?.projectId,
+                        data: domain
                     });
-                    connections.push({ from: account.id, to: domain.id });
+                    allConnections.push({ from: account.id, to: domain.id });
 
-                    // Link to project if assigned
-                    const domainResource = graphData.resources.find(r => r.id === domain.id && r.providerId === domain.providerId);
                     if (domainResource?.projectId) {
-                        connections.push({ from: domainResource.projectId, to: domain.id });
+                        allConnections.push({ from: domainResource.projectId, to: domain.id });
                     }
 
                     // Render records
                     domain.records.forEach((record, recIdx) => {
                         const rx = dx + xSpacing;
                         const ry = dy + (recIdx * 30);
-                        nodes.push({
+                        allNodes.push({
                             id: `${domain.id}-${record.id}`,
                             type: 'record',
                             label: `${record.type} ${record.name}`,
-                            x: rx, y: ry
+                            x: rx, y: ry,
+                            provider: domain.providerId,
+                            data: record
                         });
-                        connections.push({ from: domain.id, to: `${domain.id}-${record.id}` });
+                        allConnections.push({ from: domain.id, to: `${domain.id}-${record.id}` });
                     });
                 });
 
@@ -230,38 +388,103 @@
                 accountServers.forEach((server, srvIdx) => {
                     const sx = x + xSpacing * 2;
                     const sy = y + (srvIdx * 50) + 200;
-                    nodes.push({
+                    const serverResource = graphData.resources.find(r => r.id === server.id && r.providerId === server.providerId);
+                    allNodes.push({
                         id: server.id,
                         type: 'server',
                         label: server.name,
-                        x: sx, y: sy
+                        x: sx, y: sy,
+                        provider: server.providerId,
+                        projectId: serverResource?.projectId,
+                        status: server.status,
+                        data: server
                     });
-                    connections.push({ from: account.id, to: server.id });
+                    allConnections.push({ from: account.id, to: server.id });
 
-                    // Link to project if assigned
-                    const serverResource = graphData.resources.find(r => r.id === server.id && r.providerId === server.providerId);
                     if (serverResource?.projectId) {
-                        connections.push({ from: serverResource.projectId, to: server.id });
+                        allConnections.push({ from: serverResource.projectId, to: server.id });
                     }
 
                     // Link domain records to servers (if IP matches)
                     graphData.domains.forEach(domain => {
                         domain.records.forEach(record => {
                             if ((record.type === 'A' || record.type === 'AAAA') && record.value === server.publicIp) {
-                                connections.push({ from: `${domain.id}-${record.id}`, to: server.id });
+                                allConnections.push({ from: `${domain.id}-${record.id}`, to: server.id });
                             }
                         });
                     });
                 });
             });
 
+            applyFilters();
+            updateStats();
+        }
+
+        function applyFilters() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const providerFilter = document.getElementById('providerFilter').value;
+            const projectFilter = document.getElementById('projectFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredNodes = allNodes.filter(node => {
+                if (typeFilter !== 'all' && node.type !== typeFilter) return false;
+                if (providerFilter !== 'all' && node.provider !== providerFilter) return false;
+                if (projectFilter !== 'all' && node.projectId !== projectFilter) return false;
+                if (searchTerm && !node.label.toLowerCase().includes(searchTerm)) return false;
+                return true;
+            });
+
+            // Filter connections to only show connections between visible nodes
+            const visibleNodeIds = new Set(filteredNodes.map(n => n.id));
+            filteredConnections = allConnections.filter(conn => 
+                visibleNodeIds.has(conn.from) && visibleNodeIds.has(conn.to)
+            );
+
+            renderFilteredGraph();
+        }
+
+        function renderFilteredGraph() {
+            const canvas = document.getElementById('canvas');
+            canvas.innerHTML = '';
+
+            // Create SVG for connections
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.style.position = 'absolute';
+            svg.style.width = '100%';
+            svg.style.height = '100%';
+            svg.style.pointerEvents = 'none';
+            svg.style.zIndex = '0';
+            canvas.appendChild(svg);
+
+            // Render connections
+            filteredConnections.forEach(conn => {
+                const fromNode = filteredNodes.find(n => n.id === conn.from);
+                const toNode = filteredNodes.find(n => n.id === conn.to);
+                if (!fromNode || !toNode) return;
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                const x1 = (fromNode.x + 50) * zoomLevel + panX;
+                const y1 = (fromNode.y + 20) * zoomLevel + panY;
+                const x2 = (toNode.x + 50) * zoomLevel + panX;
+                const y2 = (toNode.y + 20) * zoomLevel + panY;
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
+                line.setAttribute('stroke-width', 2 * zoomLevel);
+                svg.appendChild(line);
+            });
+
             // Render nodes
-            nodes.forEach(node => {
+            filteredNodes.forEach(node => {
                 const nodeEl = document.createElement('div');
                 nodeEl.className = `node node-${node.type}`;
                 nodeEl.textContent = node.label;
-                nodeEl.style.left = node.x + 'px';
-                nodeEl.style.top = node.y + 'px';
+                nodeEl.setAttribute('data-node-id', node.id);
+                nodeEl.style.left = (node.x * zoomLevel + panX) + 'px';
+                nodeEl.style.top = (node.y * zoomLevel + panY) + 'px';
+                nodeEl.style.fontSize = (12 * zoomLevel) + 'px';
                 nodeEl.onclick = () => {
                     vscode.postMessage({
                         command: 'nodeClick',
@@ -269,36 +492,89 @@
                         nodeType: node.type
                     });
                 };
-                container.appendChild(nodeEl);
+                canvas.appendChild(nodeEl);
             });
 
-            // Render connections
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.style.position = 'absolute';
-            svg.style.width = '100%';
-            svg.style.height = '100%';
-            svg.style.pointerEvents = 'none';
-            svg.style.zIndex = '0';
-            container.appendChild(svg);
+            updateTransform();
+        }
 
-            connections.forEach(conn => {
-                const fromNode = nodes.find(n => n.id === conn.from);
-                const toNode = nodes.find(n => n.id === conn.to);
-                if (!fromNode || !toNode) return;
+        function updateTransform() {
+            const canvas = document.getElementById('canvas');
+            canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+            document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+        }
 
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', fromNode.x + 50);
-                line.setAttribute('y1', fromNode.y + 20);
-                line.setAttribute('x2', toNode.x + 50);
-                line.setAttribute('y2', toNode.y + 20);
-                line.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
-                line.setAttribute('stroke-width', '2');
-                svg.appendChild(line);
+        function zoomIn() {
+            zoomLevel = Math.min(zoomLevel * 1.2, 3);
+            updateTransform();
+        }
+
+        function zoomOut() {
+            zoomLevel = Math.max(zoomLevel / 1.2, 0.1);
+            updateTransform();
+        }
+
+        function resetZoom() {
+            zoomLevel = 1;
+            panX = 0;
+            panY = 0;
+            updateTransform();
+        }
+
+        function centerView() {
+            if (filteredNodes.length === 0) return;
+            const bounds = filteredNodes.reduce((acc, node) => {
+                return {
+                    minX: Math.min(acc.minX, node.x),
+                    maxX: Math.max(acc.maxX, node.x),
+                    minY: Math.min(acc.minY, node.y),
+                    maxY: Math.max(acc.maxY, node.y)
+                };
+            }, { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
+
+            const centerX = (bounds.minX + bounds.maxX) / 2;
+            const centerY = (bounds.minY + bounds.maxY) / 2;
+            panX = window.innerWidth / 2 - centerX * zoomLevel;
+            panY = window.innerHeight / 2 - centerY * zoomLevel;
+            updateTransform();
+        }
+
+        function handleSearch() {
+            applyFilters();
+        }
+
+        function quickSearch() {
+            const term = document.getElementById('quickSearch').value.toLowerCase();
+            const canvas = document.getElementById('canvas');
+            
+            if (!term) {
+                canvas.querySelectorAll('.node.highlighted').forEach(el => {
+                    el.classList.remove('highlighted');
+                });
+                return;
+            }
+
+            filteredNodes.forEach(node => {
+                const matches = node.label.toLowerCase().includes(term);
+                const nodeEl = canvas.querySelector(`[data-node-id="${node.id}"]`);
+                if (nodeEl) {
+                    if (matches) {
+                        nodeEl.classList.add('highlighted');
+                    } else {
+                        nodeEl.classList.remove('highlighted');
+                    }
+                }
             });
         }
 
         function resetView() {
-            renderGraph();
+            resetZoom();
+            document.getElementById('typeFilter').value = 'all';
+            document.getElementById('providerFilter').value = 'all';
+            document.getElementById('projectFilter').value = 'all';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('quickSearch').value = '';
+            applyFilters();
         }
 
         function toggleLayout() {
@@ -315,6 +591,52 @@
                 });
             }
         }
+
+        function updateStats() {
+            const stats = {
+                total: allNodes.length,
+                visible: filteredNodes.length,
+                accounts: allNodes.filter(n => n.type === 'account').length,
+                projects: allNodes.filter(n => n.type === 'project').length,
+                domains: allNodes.filter(n => n.type === 'domain').length,
+                servers: allNodes.filter(n => n.type === 'server').length,
+                records: allNodes.filter(n => n.type === 'record').length
+            };
+            document.getElementById('statsText').textContent = 
+                `${stats.visible}/${stats.total} sichtbar | ` +
+                `A:${stats.accounts} P:${stats.projects} D:${stats.domains} S:${stats.servers} R:${stats.records}`;
+        }
+
+        // Pan with mouse drag
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+
+        document.getElementById('map-container').addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('node')) return;
+            isDragging = true;
+            dragStartX = e.clientX - panX;
+            dragStartY = e.clientY - panY;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            panX = e.clientX - dragStartX;
+            panY = e.clientY - dragStartY;
+            updateTransform();
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Zoom with mouse wheel
+        document.getElementById('map-container').addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            zoomLevel = Math.max(0.1, Math.min(3, zoomLevel * delta));
+            updateTransform();
+        });
 
         // Request initial data
         vscode.postMessage({ command: 'requestData' });
