@@ -3651,3 +3651,326 @@ Der Benutzer sagt, dass die DevOps Map keine Verbindungslinien zeigt. Ich muss m
 
 ---
 
+Ich schaue mir den Code für die Verbindungslinien an:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Der Code für die Verbindungslinien sieht korrekt aus. Das Problem könnte sein, dass das SVG keine feste Größe hat oder dass die CSS-Variable `var(--vscode-textLink-foreground)` nicht funktioniert im WebView-Kontext.
+
+Ich sollte:
+1. Das SVG mit festen Dimensionen und einem viewBox versehen
+2. Sicherstellen, dass die Stroke-Farbe einen Fallback hat
+3. Das SVG größer machen, damit es den gesamten Canvas abdeckt
+
+Lass mich auch prüfen, ob das Canvas richtig positioniert ist.</details></think>
+
+---
+
+Das Problem ist wahrscheinlich, dass das SVG keine ausreichende Größe hat oder die Farbe nicht angezeigt wird. Ich fixe das:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Das Canvas hat keine feste Größe. Das SVG sollte auch eine größere Dimension haben, um alle Verbindungen anzuzeigen. Ich werde das SVG so anpassen, dass es eine ausreichende Größe hat und die Linien korrekt angezeigt werden.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 7, lines removed: undefined
+
+```diff
+@@ -853,4 +853,11 @@
+              canvas.innerHTML = '';
+  
++             // Calculate canvas bounds for SVG size
++             let maxX = 0, maxY = 0;
++             filteredNodes.forEach(node =&gt; {
++                 maxX = Math.max(maxX, node.x + 200);
++                 maxY = Math.max(maxY, node.y + 100);
++             });
++             
+              // Create SVG for connections (behind nodes)
+              const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+```
+
+**Chunk 2**
+Lines added: 3, lines removed: 2
+
+```diff
+@@ -859,8 +866,9 @@
+              svg.style.top = '0';
+              svg.style.left = '0';
+-             svg.style.width = '100%';
+-             svg.style.height = '100%';
++             svg.style.width = Math.max(maxX, 2000) + 'px';
++             svg.style.height = Math.max(maxY, 2000) + 'px';
+              svg.style.pointerEvents = 'none';
+              svg.style.zIndex = '1';
++             svg.style.overflow = 'visible';
+              canvas.appendChild(svg);
+  
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Jetzt sollte ich auch sicherstellen, dass die Stroke-Farbe einen Fallback hat, falls die CSS-Variable nicht funktioniert.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 3, lines removed: undefined
+
+```diff
+@@ -920,4 +920,7 @@
+                  const x2 = toNode.x + 50;
+                  const y2 = toNode.y + 20;
++                 
++                 // Get computed color (CSS variables don't work directly in SVG attributes)
++                 const strokeColor = getComputedStyle(document.body).getPropertyValue('--vscode-textLink-foreground').trim() || '#3794ff';
+                  
+                  if (connectionStyle === 'curved') {
+```
+
+**Chunk 2**
+Lines added: 2, lines removed: 2
+
+```diff
+@@ -929,7 +932,7 @@
+                      path.setAttribute('d', d);
+                      path.setAttribute('fill', 'none');
+-                     path.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
++                     path.setAttribute('stroke', strokeColor);
+                      path.setAttribute('stroke-width', connectionWidth);
+-                     path.setAttribute('opacity', '0.6');
++                     path.setAttribute('opacity', '0.7');
+                      svg.appendChild(path);
+                  } else {
+```
+
+**Chunk 3**
+Lines added: 2, lines removed: 2
+
+```diff
+@@ -939,7 +942,7 @@
+                      line.setAttribute('x2', x2);
+                      line.setAttribute('y2', y2);
+-                     line.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
++                     line.setAttribute('stroke', strokeColor);
+                      line.setAttribute('stroke-width', connectionWidth);
+-                     line.setAttribute('opacity', '0.6');
++                     line.setAttribute('opacity', '0.7');
+                      if (connectionStyle === 'dashed') {
+                          line.setAttribute('stroke-dasharray', '5,5');
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Jetzt muss ich auch sicherstellen, dass die Verbindungen außerhalb der forEach-Schleife nur einmal die Farbe berechnen. Ich sollte die Berechnung vor die Schleife verschieben.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 3, lines removed: undefined
+
+```diff
+@@ -911,4 +911,7 @@
+  
+              // Render connections after nodes (so they appear behind)
++             // Get computed color once (CSS variables don't work directly in SVG attributes)
++             const strokeColor = getComputedStyle(document.body).getPropertyValue('--vscode-textLink-foreground').trim() || '#3794ff';
++             
+              filteredConnections.forEach(conn =&gt; {
+                  const fromNode = filteredNodes.find(n =&gt; n.id === conn.from);
+```
+
+**Chunk 2**
+Lines added: undefined, lines removed: 3
+
+```diff
+@@ -920,7 +923,4 @@
+                  const x2 = toNode.x + 50;
+                  const y2 = toNode.y + 20;
+-                 
+-                 // Get computed color (CSS variables don't work directly in SVG attributes)
+-                 const strokeColor = getComputedStyle(document.body).getPropertyValue('--vscode-textLink-foreground').trim() || '#3794ff';
+                  
+                  if (connectionStyle === 'curved') {
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Jetzt kompilieren, packen und installieren.</details></think>
+
+---
+
+Kompilieren, packen und installieren:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npm run compile; npx @vscode/vsce package</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npm run compile; npx @vscode/vsce package
+```
+
+```
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+Executing prepublish script 'npm run vscode:prepublish'...
+
+&gt; devops-hybrid@0.4.0 vscode:prepublish
+&gt; npm run compile
+
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+ INFO  Files included in the VSIX:
+devops-hybrid-0.4.0.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ .cursorindexingignore [0.11 KB]
+   ├─ LICENSE.txt [1.06 KB]
+   ├─ changelog.md [1.81 KB]
+   ├─ package.json [13.63 KB]
+   ├─ readme.md [8.59 KB]
+   ├─ .cursor/
+   │  └─ worktrees.json [0.05 KB]
+   ├─ .specstory/
+   │  ├─ .gitignore [0.09 KB]
+   │  ├─ .project.json [0.22 KB]
+   │  ├─ .what-is-this.md [3.3 KB]
+   │  └─ history/ (4 files) [989.97 KB]
+   ├─ out/
+   │  ├─ extension.js [5.78 KB]
+   │  ├─ bridge/ (4 files) [48.83 KB]
+   │  ├─ core/ (4 files) [12.99 KB]
+   │  ├─ providers/ (5 files) [45.64 KB]
+   │  ├─ util/ (5 files) [8.89 KB]
+   │  └─ views/ (3 files) [21.12 KB]
+   └─ resources/
+      └─ webview/ (1 file) [48.51 KB]
+
+=&gt; Run vsce ls --tree to see all included files.
+
+ DONE  Packaged: D:\DevOpsTool\devops-hybrid-0.4.0.vsix (38 files, 236.54 KB)
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Kompilierung und Packen erfolgreich. Jetzt committen, pushen und installieren.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git add .; git commit -m "fix: DevOps Map Verbindungslinien jetzt sichtbar"; git push</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git add .; git commit -m "fix: DevOps Map Verbindungslinien jetzt sichtbar"; git push
+```
+
+```
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-individuelle-auswahl-von-entitäten-1.md', LF will be replaced by CRLF the next time Git touches it
+[main 375d5b2] fix: DevOps Map Verbindungslinien jetzt sichtbar
+ 2 files changed, 968 insertions(+), 14 deletions(-)
+To https://github.com/donapart/DevOpsTool.git
+   9526776..375d5b2  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Commit und Push erfolgreich. Jetzt die Extension in VS Code und Cursor installieren.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: & "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force; & "C:\Users\donApart\AppData\Local\Programs\cursor\resources\app\bin\cursor.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force</summary>
+
+```bash
+& "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force; & "C:\Users\donApart\AppData\Local\Programs\cursor\resources\app\bin\cursor.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force
+```
+
+```
+Installing extensions...
+Extension 'devops-hybrid-0.4.0.vsix' was successfully installed.
+Installing extensions...
+Extension 'devops-hybrid-0.4.0.vsix' was successfully installed.
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Erfolgreich installiert. Jetzt sollten die Verbindungslinien funktionieren.</details></think>
+
+---
+
+Fertig! Die Verbindungslinien sollten jetzt sichtbar sein.
+
+## Fixes:
+1. **SVG-Größe**: Das SVG hat jetzt eine dynamische Größe basierend auf den Node-Positionen (mindestens 2000x2000px)
+2. **Farbe**: CSS-Variablen funktionieren nicht direkt in SVG-Attributen - jetzt wird die Farbe mit `getComputedStyle()` ausgelesen mit Fallback `#3794ff`
+3. **Opazität**: Erhöht auf 0.7 für bessere Sichtbarkeit
+
+**Starte VS Code/Cursor neu** und öffne die DevOps Map. Die Linien zwischen Accounts → Domains → Records und Accounts → Servern sollten jetzt sichtbar sein!
+
+---
+
