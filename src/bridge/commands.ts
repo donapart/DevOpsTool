@@ -54,7 +54,8 @@ export function registerBridgeCommands(
     context: vscode.ExtensionContext, 
     pm: ProviderManager,
     ionosProvider: IonosDnsProvider,
-    hetznerProvider: HetznerCloudProvider
+    hetznerProvider: HetznerCloudProvider,
+    updateTokenContext: () => Promise<void>
 ) {
     context.subscriptions.push(
         // =============================================
@@ -71,6 +72,7 @@ export function registerBridgeCommands(
             if (token) {
                 await context.secrets.store('ionos.dns.token', token);
                 ionosProvider.invalidateCache();
+                await updateTokenContext();
                 vscode.window.showInformationMessage('✅ IONOS DNS Token gespeichert.');
                 vscode.commands.executeCommand('devops.refreshAll');
             }
@@ -87,6 +89,7 @@ export function registerBridgeCommands(
             if (token) {
                 await context.secrets.store('hetzner.cloud.token', token);
                 hetznerProvider.invalidateCache();
+                await updateTokenContext();
                 vscode.window.showInformationMessage('✅ Hetzner Cloud Token gespeichert.');
                 vscode.commands.executeCommand('devops.refreshAll');
             }
@@ -97,6 +100,7 @@ export function registerBridgeCommands(
             if (confirmed) {
                 await context.secrets.delete('ionos.dns.token');
                 ionosProvider.invalidateCache();
+                await updateTokenContext();
                 vscode.window.showInformationMessage('IONOS Token gelöscht.');
                 vscode.commands.executeCommand('devops.refreshAll');
             }
@@ -107,6 +111,7 @@ export function registerBridgeCommands(
             if (confirmed) {
                 await context.secrets.delete('hetzner.cloud.token');
                 hetznerProvider.invalidateCache();
+                await updateTokenContext();
                 vscode.window.showInformationMessage('Hetzner Token gelöscht.');
                 vscode.commands.executeCommand('devops.refreshAll');
             }

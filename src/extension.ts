@@ -24,12 +24,23 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.window.registerTreeDataProvider('devopsDomainsView', domainsTreeProvider);
   vscode.window.registerTreeDataProvider('devopsComputeView', computeTreeProvider);
 
-  registerBridgeCommands(context, pm, ionosProvider, hetznerProvider);
+  // Update context for welcome views
+  async function updateTokenContext() {
+    const ionosConfigured = await ionosProvider.isConfigured();
+    const hetznerConfigured = await hetznerProvider.isConfigured();
+    vscode.commands.executeCommand('setContext', 'devops.ionosConfigured', ionosConfigured);
+    vscode.commands.executeCommand('setContext', 'devops.hetznerConfigured', hetznerConfigured);
+  }
+  
+  await updateTokenContext();
+
+  registerBridgeCommands(context, pm, ionosProvider, hetznerProvider, updateTokenContext);
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('devops.refreshAll', () => {
+    vscode.commands.registerCommand('devops.refreshAll', async () => {
       ionosProvider.invalidateCache();
       hetznerProvider.invalidateCache();
+      await updateTokenContext();
       domainsTreeProvider.refresh();
       computeTreeProvider.refresh();
       logInfo('Extension', 'Views refreshed');

@@ -2,7 +2,7 @@
   "name": "devops-hybrid",
   "displayName": "DevOps Hybrid Cockpit",
   "description": "Hybrid Cloud Management for IONOS and Hetzner within VS Code. Manage DNS records and Cloud servers without leaving your editor.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "donapart",
   "repository": {
     "type": "git",
@@ -176,14 +176,24 @@
     "menus": {
       "view/title": [
         {
+          "command": "devops.setIonosToken",
+          "when": "view == devopsDomainsView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "devops.setHetznerToken",
+          "when": "view == devopsComputeView",
+          "group": "navigation@1"
+        },
+        {
           "command": "devops.refreshAll",
           "when": "view == devopsDomainsView || view == devopsComputeView",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "devops.showLogs",
           "when": "view == devopsDomainsView || view == devopsComputeView",
-          "group": "navigation"
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [
@@ -264,6 +274,18 @@
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "devopsDomainsView",
+        "contents": "Willkommen beim DevOps Hybrid Cockpit!\n\nUm Ihre IONOS Domains zu sehen, konfigurieren Sie bitte Ihren API Token.\n[IONOS Token eingeben](command:devops.setIonosToken)\n\nSie finden Ihren Token in der [IONOS Developer Console](https://developer.hosting.ionos.de/).",
+        "when": "!devops.ionosConfigured"
+      },
+      {
+        "view": "devopsComputeView",
+        "contents": "Willkommen beim DevOps Hybrid Cockpit!\n\nUm Ihre Hetzner Server zu sehen, konfigurieren Sie bitte Ihren API Token.\n[Hetzner Token eingeben](command:devops.setHetznerToken)\n\nSie finden Ihren Token in der [Hetzner Cloud Console](https://console.hetzner.cloud/) unter Security → API Tokens.",
+        "when": "!devops.hetznerConfigured"
+      }
+    ],
     "configuration": {
       "title": "DevOps Hybrid Cockpit",
       "properties": {
