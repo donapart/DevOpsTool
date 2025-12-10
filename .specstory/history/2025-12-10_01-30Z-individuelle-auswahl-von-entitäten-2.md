@@ -2,7 +2,7 @@
 
 <!-- cursor Session 293abec6-db05-45b7-a77e-079c7e8f808c (2025-12-10 01:30Z) -->
 
-# Architektur der DevOps VS Code Erweiterung (2025-12-10 01:30Z)
+# Individuelle auswahl von entitäten (2025-12-10 01:30Z)
 
 _**User (2025-12-10 05:56Z)**_
 
@@ -1883,15 +1883,263 @@ Lines added: 11, lines removed: undefined
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="search_replace">
-<details>
-<summary>Tool use: **search_replace**</summary>
+<tool-use data-tool-type="write" data-tool-name="search_replace">
 
-Status: **loading**
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
 
+**Chunk 1**
+Lines added: 1, lines removed: 1
+
+```diff
+@@ -1170,5 +1170,5 @@
+              resetZoom();
+              // Reset filter modes
+-             filterModes = { type: 'multi', provider: 'multi', project: 'multi' };
++             filterModes = { type: 'multi', provider: 'multi', project: 'multi', account: 'multi', domain: 'multi', server: 'multi' };
+              document.getElementById('typeFilterModeMulti').classList.add('active');
+              document.getElementById('typeFilterModeSingle').classList.remove('active');
+```
+
+**Chunk 2**
+Lines added: 6, lines removed: undefined
+
+```diff
+@@ -1177,4 +1177,10 @@
+              document.getElementById('projectFilterModeMulti').classList.add('active');
+              document.getElementById('projectFilterModeSingle').classList.remove('active');
++             document.getElementById('accountFilterModeMulti').classList.add('active');
++             document.getElementById('accountFilterModeSingle').classList.remove('active');
++             document.getElementById('domainFilterModeMulti').classList.add('active');
++             document.getElementById('domainFilterModeSingle').classList.remove('active');
++             document.getElementById('serverFilterModeMulti').classList.add('active');
++             document.getElementById('serverFilterModeSingle').classList.remove('active');
+              // Reset type filters
+              document.getElementById('filter-account').checked = true;
+```
 
 </details>
+
 </tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 9, lines removed: undefined
+
+```diff
+@@ -1195,4 +1195,13 @@
+              document.getElementById('filter-project-all').checked = true;
+              document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)').forEach(cb =&gt; cb.checked = true);
++             // Reset account filters
++             document.getElementById('filter-account-all').checked = true;
++             document.querySelectorAll('#accountFilterGroup input[type="checkbox"]:not(#filter-account-all)').forEach(cb =&gt; cb.checked = true);
++             // Reset domain filters
++             document.getElementById('filter-domain-all').checked = true;
++             document.querySelectorAll('#domainFilterGroup input[type="checkbox"]:not(#filter-domain-all)').forEach(cb =&gt; cb.checked = true);
++             // Reset server filters
++             document.getElementById('filter-server-all').checked = true;
++             document.querySelectorAll('#serverFilterGroup input[type="checkbox"]:not(#filter-server-all)').forEach(cb =&gt; cb.checked = true);
+              // Reset display options
+              layoutMode = 'hierarchical';
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Ich habe die Filter für individuelle Accounts, Domains und Server hinzugefügt. Jetzt sollte ich noch das Changelog und README aktualisieren, dann kompilieren, packen und installieren.</details></think>
+
+---
+
+Perfekt! Ich habe die individuellen Instanz-Filter hinzugefügt. Jetzt können Sie:
+
+1. **Einzelne Accounts** aus- und abwählen
+2. **Einzelne Domains** aus- und abwählen  
+3. **Einzelne Server** aus- und abwählen
+4. **Records** werden automatisch basierend auf ihrer zugehörigen Domain gefiltert
+
+Jede Kategorie hat wieder Single/Multi-Select Modus. Aktualisiere nun die Dokumentation und packe neu:
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: CHANGELOG.md</summary>
+
+**Chunk 1**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -8,4 +8,5 @@
+  - **DevOps Map - Erweiterte Filter &amp; Darstellung**
+    - Filter mit Single/Multi-Select Modus (Typ, Provider, Projekt)
++   - **Individuelle Instanz-Filter**: Einzelne Accounts, Domains, Server aus-/abwählen
+    - Toggle zwischen Multi-Select und Single-Select pro Filter-Kategorie
+    - Layout-Modi: Hierarchisch, Kreis, Grid, Force-Directed
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: README.md</summary>
+
+**Chunk 1**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -32,4 +32,5 @@
+  - **Flexible Filter**:
+    - Single/Multi-Select Modus pro Filter-Kategorie (Typ, Provider, Projekt)
++   - **Individuelle Instanzen**: Einzelne Accounts, Domains, Server gezielt aus-/abwählen
+    - Schnellsuche für sofortige Filterung
+  - **Darstellungsoptionen**:
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npm run compile</summary>
+
+```bash
+$env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npm run compile
+```
+
+```
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Kompilierung war erfolgreich. Jetzt packen.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npx @vscode/vsce package</summary>
+
+```bash
+$env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npx @vscode/vsce package
+```
+
+```
+Executing prepublish script 'npm run vscode:prepublish'...
+
+&gt; devops-hybrid@0.4.0 vscode:prepublish
+&gt; npm run compile
+
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+ INFO  Files included in the VSIX:
+devops-hybrid-0.4.0.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ .cursorindexingignore [0.11 KB]
+   ├─ LICENSE.txt [1.04 KB]
+   ├─ changelog.md [1.81 KB]
+   ├─ package.json [13.63 KB]
+   ├─ readme.md [8.59 KB]
+   ├─ .specstory/
+   │  ├─ .gitignore [0.09 KB]
+   │  ├─ .project.json [0.22 KB]
+   │  ├─ .what-is-this.md [3.3 KB]
+   │  └─ history/ (4 files) [857.34 KB]
+   ├─ out/
+   │  ├─ extension.js [5.78 KB]
+   │  ├─ bridge/ (4 files) [48.83 KB]
+   │  ├─ core/ (4 files) [12.99 KB]
+   │  ├─ providers/ (5 files) [45.62 KB]
+   │  ├─ util/ (5 files) [8.89 KB]
+   │  └─ views/ (3 files) [21.12 KB]
+   └─ resources/
+      └─ webview/ (1 file) [46.36 KB]
+
+=&gt; Run vsce ls --tree to see all included files.
+
+ DONE  Packaged: D:\DevOpsTool\devops-hybrid-0.4.0.vsix (37 files, 216.87 KB)
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Perfekt! Die VSIX wurde erstellt (216.87 KB). Jetzt sollte ich zusammenfassen, was der Benutzer tun muss.</details></think>
+
+---
+
+Perfekt! Alle Änderungen sind abgeschlossen:
+
+## ✅ Abgeschlossen
+
+### Neue Features implementiert:
+- **Individuelle Instanz-Filter** für Accounts, Domains und Server
+- Jede Kategorie mit Single/Multi-Select Modus
+- Records werden automatisch basierend auf ihrer zugehörigen Domain gefiltert
+
+### Dateien aktualisiert:
+1. `resources/webview/mindmap.html` - Filter-UI und Logik erweitert
+2. `CHANGELOG.md` - Version 0.4.0 dokumentiert
+3. `README.md` - Features beschrieben
+
+### Extension gepackt:
+- **Datei**: `D:\DevOpsTool\devops-hybrid-0.4.0.vsix` (216.87 KB)
+
+---
+
+## 🚀 Installation
+
+**Option A: Manuell in VS Code/Cursor:**
+1. `Ctrl+Shift+P`
+2. "Extensions: Install from VSIX..."
+3. Datei auswählen: `D:\DevOpsTool\devops-hybrid-0.4.0.vsix`
+
+**Option B: Via Kommandozeile (wenn `code` im PATH):**
+```powershell
+code --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix
+```
+
+---
+
+## 📦 Git Commit & Push (optional)
+
+```powershell
+cd D:\DevOpsTool
+git add .
+git commit -m "feat: DevOps Map - Individuelle Instanz-Filter für Accounts, Domains und Server"
+git push
+```
+
+Die Extension ist bereit zum Testen! Nach der Installation können Sie in der DevOps Map:
+- Einzelne Accounts, Domains und Server gezielt filtern
+- Zwischen Single- und Multi-Select umschalten
+- Die visuelle Darstellung individuell anpassen
 
 ---
 

@@ -177,6 +177,38 @@
             font-size: 10px;
             color: var(--vscode-descriptionForeground);
         }
+        .collapsible > label {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .toggle-icon {
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+        .collapsible.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        .collapsible.collapsed .checkbox-group {
+            display: none;
+        }
+        .select-all {
+            border-bottom: 1px solid var(--vscode-input-border);
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+        }
+        .filter-item-count {
+            font-size: 10px;
+            color: var(--vscode-descriptionForeground);
+            margin-left: auto;
+            padding-left: 8px;
+        }
+        .filter-item-status {
+            font-size: 12px;
+            margin-left: auto;
+            padding-left: 8px;
+        }
         .zoom-controls {
             display: flex;
             gap: 4px;
@@ -287,60 +319,67 @@
                 <input type="text" id="searchInput" placeholder="Domain, Server, Projekt..." oninput="handleSearch()">
             </div>
             
-            <div class="control-group">
-                <label>🎯 Filter: Typ</label>
-                <div class="filter-mode-toggle">
-                    <button id="typeFilterModeMulti" class="active" onclick="setFilterMode('type', 'multi')">Multi</button>
-                    <button id="typeFilterModeSingle" onclick="setFilterMode('type', 'single')">Single</button>
-                </div>
-                <div class="checkbox-group" id="typeFilterGroup">
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="filter-account" checked onchange="handleSingleSelectFilter('type', 'filter-account'); applyFilters()">
-                        <label for="filter-account">Accounts</label>
+            <div class="control-group collapsible">
+                <label onclick="toggleSection('accountsSection')">👤 Accounts <span class="toggle-icon">▼</span></label>
+                <div class="checkbox-group" id="accountsSection">
+                    <div class="checkbox-item select-all">
+                        <input type="checkbox" id="filter-accounts-all" checked onchange="toggleAllInGroup('accounts')">
+                        <label for="filter-accounts-all"><strong>Alle/Keine</strong></label>
                     </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="filter-project" checked onchange="handleSingleSelectFilter('type', 'filter-project'); applyFilters()">
-                        <label for="filter-project">Projekte</label>
-                    </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="filter-domain" checked onchange="handleSingleSelectFilter('type', 'filter-domain'); applyFilters()">
-                        <label for="filter-domain">Domains</label>
-                    </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="filter-server" checked onchange="handleSingleSelectFilter('type', 'filter-server'); applyFilters()">
-                        <label for="filter-server">Server</label>
-                    </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="filter-record" checked onchange="handleSingleSelectFilter('type', 'filter-record'); applyFilters()">
-                        <label for="filter-record">Records</label>
-                    </div>
+                    <div id="accountsFilterList"></div>
                 </div>
             </div>
             
-            <div class="control-group">
-                <label>🎯 Filter: Provider</label>
-                <div class="filter-mode-toggle">
-                    <button id="providerFilterModeMulti" class="active" onclick="setFilterMode('provider', 'multi')">Multi</button>
-                    <button id="providerFilterModeSingle" onclick="setFilterMode('provider', 'single')">Single</button>
-                </div>
-                <div class="checkbox-group" id="providerFilterGroup">
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="filter-provider-all" checked onchange="toggleAllProviders()">
-                        <label for="filter-provider-all">Alle Provider</label>
+            <div class="control-group collapsible">
+                <label onclick="toggleSection('projectsSection')">📁 Projekte <span class="toggle-icon">▼</span></label>
+                <div class="checkbox-group" id="projectsSection">
+                    <div class="checkbox-item select-all">
+                        <input type="checkbox" id="filter-projects-all" checked onchange="toggleAllInGroup('projects')">
+                        <label for="filter-projects-all"><strong>Alle/Keine</strong></label>
                     </div>
+                    <div id="projectsFilterList"></div>
                 </div>
             </div>
             
-            <div class="control-group">
-                <label>🎯 Filter: Projekt</label>
-                <div class="filter-mode-toggle">
-                    <button id="projectFilterModeMulti" class="active" onclick="setFilterMode('project', 'multi')">Multi</button>
-                    <button id="projectFilterModeSingle" onclick="setFilterMode('project', 'single')">Single</button>
+            <div class="control-group collapsible">
+                <label onclick="toggleSection('domainsSection')">🌐 Domains <span class="toggle-icon">▼</span></label>
+                <div class="checkbox-group" id="domainsSection">
+                    <div class="checkbox-item select-all">
+                        <input type="checkbox" id="filter-domains-all" checked onchange="toggleAllInGroup('domains')">
+                        <label for="filter-domains-all"><strong>Alle/Keine</strong></label>
+                    </div>
+                    <div id="domainsFilterList"></div>
                 </div>
-                <div class="checkbox-group" id="projectFilterGroup">
+            </div>
+            
+            <div class="control-group collapsible">
+                <label onclick="toggleSection('serversSection')">🖥️ Server <span class="toggle-icon">▼</span></label>
+                <div class="checkbox-group" id="serversSection">
+                    <div class="checkbox-item select-all">
+                        <input type="checkbox" id="filter-servers-all" checked onchange="toggleAllInGroup('servers')">
+                        <label for="filter-servers-all"><strong>Alle/Keine</strong></label>
+                    </div>
+                    <div id="serversFilterList"></div>
+                </div>
+            </div>
+            
+            <div class="control-group collapsible collapsed">
+                <label onclick="toggleSection('providersSection')">☁️ Provider <span class="toggle-icon">▼</span></label>
+                <div class="checkbox-group" id="providersSection">
+                    <div class="checkbox-item select-all">
+                        <input type="checkbox" id="filter-providers-all" checked onchange="toggleAllInGroup('providers')">
+                        <label for="filter-providers-all"><strong>Alle/Keine</strong></label>
+                    </div>
+                    <div id="providersFilterList"></div>
+                </div>
+            </div>
+            
+            <div class="control-group collapsible collapsed">
+                <label onclick="toggleSection('recordsSection')">📝 Records <span class="toggle-icon">▼</span></label>
+                <div class="checkbox-group" id="recordsSection">
                     <div class="checkbox-item">
-                        <input type="checkbox" id="filter-project-all" checked onchange="toggleAllProjects()">
-                        <label for="filter-project-all">Alle Projekte</label>
+                        <input type="checkbox" id="filter-records-show" checked onchange="applyFilters()">
+                        <label for="filter-records-show">Records anzeigen</label>
                     </div>
                 </div>
             </div>
@@ -451,12 +490,20 @@
         let allConnections = [];
         let filteredNodes = [];
         let filteredConnections = [];
-        let filterModes = { type: 'multi', provider: 'multi', project: 'multi' };
         let nodeSize = 1;
         let connectionStyle = 'straight';
         let connectionWidth = 2;
         let showLabels = true;
         let nodeColorMode = 'type';
+        
+        // Track selected items for each category
+        let selectedItems = {
+            accounts: new Set(),
+            projects: new Set(),
+            domains: new Set(),
+            servers: new Set(),
+            providers: new Set()
+        };
 
         window.addEventListener('message', event => {
             const message = event.data;
@@ -472,89 +519,139 @@
         function initializeFilters() {
             if (!graphData) return;
             
-            // Populate provider filter
-            const providerGroup = document.getElementById('providerFilterGroup');
+            // Clear previous filter lists
+            ['accounts', 'projects', 'domains', 'servers', 'providers'].forEach(group => {
+                const list = document.getElementById(`${group}FilterList`);
+                if (list) list.innerHTML = '';
+            });
+            
+            // Reset selected items
+            selectedItems = {
+                accounts: new Set(),
+                projects: new Set(),
+                domains: new Set(),
+                servers: new Set(),
+                providers: new Set()
+            };
+            
+            // Populate accounts filter
+            const accountsList = document.getElementById('accountsFilterList');
+            graphData.accounts.forEach(acc => {
+                selectedItems.accounts.add(acc.id);
+                const item = createFilterItem('accounts', acc.id, acc.name, acc.provider);
+                accountsList.appendChild(item);
+            });
+            
+            // Populate projects filter
+            const projectsList = document.getElementById('projectsFilterList');
+            graphData.projects.forEach(proj => {
+                selectedItems.projects.add(proj.id);
+                const item = createFilterItem('projects', proj.id, proj.name);
+                projectsList.appendChild(item);
+            });
+            
+            // Populate domains filter - INDIVIDUAL DOMAINS!
+            const domainsList = document.getElementById('domainsFilterList');
+            graphData.domains.forEach(domain => {
+                selectedItems.domains.add(domain.id);
+                const recordCount = domain.records?.length || 0;
+                const item = createFilterItem('domains', domain.id, domain.name, `${recordCount} Records`);
+                domainsList.appendChild(item);
+            });
+            
+            // Populate servers filter - INDIVIDUAL SERVERS!
+            const serversList = document.getElementById('serversFilterList');
+            graphData.servers.forEach(server => {
+                selectedItems.servers.add(server.id);
+                const statusIcon = server.status === 'running' ? '🟢' : server.status === 'off' ? '🔴' : '🟡';
+                const item = createFilterItem('servers', server.id, server.name, statusIcon);
+                serversList.appendChild(item);
+            });
+            
+            // Populate providers filter
+            const providersList = document.getElementById('providersFilterList');
             const providers = new Set();
             graphData.accounts.forEach(acc => providers.add(acc.provider));
             providers.forEach(prov => {
-                const item = document.createElement('div');
-                item.className = 'checkbox-item';
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `filter-provider-${prov}`;
-                checkbox.checked = true;
-                checkbox.onchange = () => {
-                    handleSingleSelectFilter('provider', checkbox.id);
-                    applyFilters();
-                };
-                const label = document.createElement('label');
-                label.htmlFor = checkbox.id;
-                label.textContent = prov;
-                item.appendChild(checkbox);
-                item.appendChild(label);
-                providerGroup.appendChild(item);
+                selectedItems.providers.add(prov);
+                const item = createFilterItem('providers', prov, prov);
+                providersList.appendChild(item);
             });
             
-            // Populate project filter
-            const projectGroup = document.getElementById('projectFilterGroup');
-            graphData.projects.forEach(proj => {
-                const item = document.createElement('div');
-                item.className = 'checkbox-item';
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `filter-project-${proj.id}`;
-                checkbox.checked = true;
-                checkbox.onchange = () => {
-                    handleSingleSelectFilter('project', checkbox.id);
-                    applyFilters();
-                };
-                const label = document.createElement('label');
-                label.htmlFor = checkbox.id;
-                label.textContent = proj.name;
-                item.appendChild(checkbox);
-                item.appendChild(label);
-                projectGroup.appendChild(item);
-            });
+            // Update counts in labels
+            updateFilterCounts();
         }
         
-        function toggleAllProviders() {
-            const allCheckbox = document.getElementById('filter-provider-all');
-            const checkboxes = document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)');
-            checkboxes.forEach(cb => cb.checked = allCheckbox.checked);
-            applyFilters();
-        }
-        
-        function toggleAllProjects() {
-            const allCheckbox = document.getElementById('filter-project-all');
-            const checkboxes = document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)');
-            checkboxes.forEach(cb => cb.checked = allCheckbox.checked);
-            applyFilters();
-        }
-        
-        function setFilterMode(category, mode) {
-            filterModes[category] = mode;
-            const multiBtn = document.getElementById(`${category}FilterModeMulti`);
-            const singleBtn = document.getElementById(`${category}FilterModeSingle`);
-            if (mode === 'multi') {
-                multiBtn.classList.add('active');
-                singleBtn.classList.remove('active');
-            } else {
-                singleBtn.classList.add('active');
-                multiBtn.classList.remove('active');
+        function createFilterItem(group, id, name, extra = '') {
+            const item = document.createElement('div');
+            item.className = 'checkbox-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `filter-${group}-${id}`;
+            checkbox.checked = true;
+            checkbox.onchange = () => {
+                if (checkbox.checked) {
+                    selectedItems[group].add(id);
+                } else {
+                    selectedItems[group].delete(id);
+                }
+                updateGroupAllCheckbox(group);
+                applyFilters();
+            };
+            
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = name;
+            
+            item.appendChild(checkbox);
+            item.appendChild(label);
+            
+            if (extra) {
+                const extraSpan = document.createElement('span');
+                extraSpan.className = extra.length <= 3 ? 'filter-item-status' : 'filter-item-count';
+                extraSpan.textContent = extra;
+                item.appendChild(extraSpan);
             }
-            applyFilters();
+            
+            return item;
         }
         
-        function handleSingleSelectFilter(category, clickedId) {
-            if (filterModes[category] !== 'single') return;
-            const groupId = `${category}FilterGroup`;
-            const checkboxes = document.querySelectorAll(`#${groupId} input[type="checkbox"]`);
-            checkboxes.forEach(cb => {
-                if (cb.id !== clickedId) {
-                    cb.checked = false;
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const controlGroup = section.closest('.control-group');
+            controlGroup.classList.toggle('collapsed');
+        }
+        
+        function toggleAllInGroup(group) {
+            const allCheckbox = document.getElementById(`filter-${group}-all`);
+            const isChecked = allCheckbox.checked;
+            
+            document.querySelectorAll(`#${group}FilterList input[type="checkbox"]`).forEach(cb => {
+                cb.checked = isChecked;
+                const id = cb.id.replace(`filter-${group}-`, '');
+                if (isChecked) {
+                    selectedItems[group].add(id);
+                } else {
+                    selectedItems[group].delete(id);
                 }
             });
+            
             applyFilters();
+        }
+        
+        function updateGroupAllCheckbox(group) {
+            const allCheckbox = document.getElementById(`filter-${group}-all`);
+            const checkboxes = document.querySelectorAll(`#${group}FilterList input[type="checkbox"]`);
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+            
+            allCheckbox.checked = allChecked;
+            allCheckbox.indeterminate = !allChecked && someChecked;
+        }
+        
+        function updateFilterCounts() {
+            // Could add count badges to section labels if desired
         }
 
         function renderGraph() {
@@ -716,75 +813,25 @@
         }
 
         function applyFilters() {
-            // Handle single-select mode for type filter
-            if (filterModes.type === 'single') {
-                const checked = document.querySelectorAll('#typeFilterGroup input[type="checkbox"]:checked');
-                if (checked.length > 1) {
-                    // If multiple checked in single mode, uncheck all except the last one
-                    checked.forEach((cb, idx) => {
-                        if (idx < checked.length - 1) cb.checked = false;
-                    });
-                }
-            }
-            
-            // Get type filters
-            const typeFilters = {
-                account: document.getElementById('filter-account').checked,
-                project: document.getElementById('filter-project').checked,
-                domain: document.getElementById('filter-domain').checked,
-                server: document.getElementById('filter-server').checked,
-                record: document.getElementById('filter-record').checked
-            };
-            
-            // Handle single-select mode for provider filter
-            if (filterModes.provider === 'single') {
-                const checked = document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all):checked');
-                if (checked.length > 1) {
-                    checked.forEach((cb, idx) => {
-                        if (idx < checked.length - 1) cb.checked = false;
-                    });
-                }
-            }
-            
-            // Get provider filters
-            const providerFilters = new Set();
-            document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)').forEach(cb => {
-                if (cb.checked) {
-                    providerFilters.add(cb.id.replace('filter-provider-', ''));
-                }
-            });
-            const allProviders = document.getElementById('filter-provider-all').checked || filterModes.provider === 'single';
-            
-            // Handle single-select mode for project filter
-            if (filterModes.project === 'single') {
-                const checked = document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all):checked');
-                if (checked.length > 1) {
-                    checked.forEach((cb, idx) => {
-                        if (idx < checked.length - 1) cb.checked = false;
-                    });
-                }
-            }
-            
-            // Get project filters
-            const projectFilters = new Set();
-            document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)').forEach(cb => {
-                if (cb.checked) {
-                    projectFilters.add(cb.id.replace('filter-project-', ''));
-                }
-            });
-            const allProjects = document.getElementById('filter-project-all').checked || filterModes.project === 'single';
-            
+            const showRecords = document.getElementById('filter-records-show').checked;
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
             filteredNodes = allNodes.filter(node => {
-                // Type filter
-                if (!typeFilters[node.type]) return false;
+                // Individual item filters
+                if (node.type === 'account' && !selectedItems.accounts.has(node.id)) return false;
+                if (node.type === 'project' && !selectedItems.projects.has(node.id)) return false;
+                if (node.type === 'domain' && !selectedItems.domains.has(node.id)) return false;
+                if (node.type === 'server' && !selectedItems.servers.has(node.id)) return false;
+                
+                // Records: check if show records is enabled AND parent domain is selected
+                if (node.type === 'record') {
+                    if (!showRecords) return false;
+                    const parentDomainId = node.id.split('-')[0];
+                    if (!selectedItems.domains.has(parentDomainId)) return false;
+                }
                 
                 // Provider filter
-                if (!allProviders && node.provider && !providerFilters.has(node.provider)) return false;
-                
-                // Project filter
-                if (!allProjects && node.projectId && !projectFilters.has(node.projectId)) return false;
+                if (node.provider && !selectedItems.providers.has(node.provider)) return false;
                 
                 // Search filter
                 if (searchTerm && !node.label.toLowerCase().includes(searchTerm)) return false;
@@ -974,26 +1021,29 @@
 
         function resetView() {
             resetZoom();
-            // Reset filter modes
-            filterModes = { type: 'multi', provider: 'multi', project: 'multi' };
-            document.getElementById('typeFilterModeMulti').classList.add('active');
-            document.getElementById('typeFilterModeSingle').classList.remove('active');
-            document.getElementById('providerFilterModeMulti').classList.add('active');
-            document.getElementById('providerFilterModeSingle').classList.remove('active');
-            document.getElementById('projectFilterModeMulti').classList.add('active');
-            document.getElementById('projectFilterModeSingle').classList.remove('active');
-            // Reset type filters
-            document.getElementById('filter-account').checked = true;
-            document.getElementById('filter-project').checked = true;
-            document.getElementById('filter-domain').checked = true;
-            document.getElementById('filter-server').checked = true;
-            document.getElementById('filter-record').checked = true;
-            // Reset provider filters
-            document.getElementById('filter-provider-all').checked = true;
-            document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)').forEach(cb => cb.checked = true);
-            // Reset project filters
-            document.getElementById('filter-project-all').checked = true;
-            document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)').forEach(cb => cb.checked = true);
+            
+            // Reset all individual item filters
+            ['accounts', 'projects', 'domains', 'servers', 'providers'].forEach(group => {
+                const allCheckbox = document.getElementById(`filter-${group}-all`);
+                if (allCheckbox) {
+                    allCheckbox.checked = true;
+                    allCheckbox.indeterminate = false;
+                }
+                document.querySelectorAll(`#${group}FilterList input[type="checkbox"]`).forEach(cb => {
+                    cb.checked = true;
+                    const id = cb.id.replace(`filter-${group}-`, '');
+                    selectedItems[group].add(id);
+                });
+            });
+            
+            // Reset records toggle
+            document.getElementById('filter-records-show').checked = true;
+            
+            // Expand all sections
+            document.querySelectorAll('.control-group.collapsible').forEach(cg => {
+                cg.classList.remove('collapsed');
+            });
+            
             // Reset display options
             layoutMode = 'hierarchical';
             document.getElementById('layoutMode').value = 'hierarchical';
@@ -1011,6 +1061,7 @@
             document.getElementById('nodeColorMode').value = 'type';
             document.getElementById('searchInput').value = '';
             document.getElementById('quickSearch').value = '';
+            
             renderGraph();
         }
 

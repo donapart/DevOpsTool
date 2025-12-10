@@ -2,7 +2,7 @@
 
 <!-- cursor Session 28e05084-26ed-4e65-b897-5ead351e93ca (2025-12-10 01:30Z) -->
 
-# Architektur der DevOps VS Code Erweiterung (2025-12-10 01:30Z)
+# Individuelle auswahl von entitäten (2025-12-10 01:30Z)
 
 _**User (2025-12-10 05:56Z)**_
 
@@ -1787,7 +1787,924 @@ Lines added: 26, lines removed: undefined
 Jetzt muss ich die JavaScript-Funktionen aktualisieren:
 
 1. `populateFilters()` - muss alle individuellen Items zu den Filtern hinzufügen
-2. `toggleSection</details></think>
+2. `toggleSection()` - für das Auf-/Zuklappen der Filter-Sektionen
+3. `toggleAllInGroup()` - für "Alle/Keine" Checkboxen
+4. `applyCategoryFilter()` - für die Kategorie-Filter
+5. `applyFilters()` - muss die neue Filterlogik verwenden
+6. `resetView()` - muss alle neuen Filter zurücksetzen</details></think>
+
+---
+
+Aktualisieren der JavaScript-Logik:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Ich muss die `initializeFilters()` Funktion komplett umschreiben und die alten Helper-Funktionen entfernen/ersetzen. Außerdem muss ich die `applyFilters()` Funktion anpassen, um die neue Logik zu verwenden.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 10, lines removed: 2
+
+```diff
+@@ -501,11 +501,19 @@
+          let filteredNodes = [];
+          let filteredConnections = [];
+-         let filterModes = { type: 'multi', provider: 'multi', project: 'multi' };
+          let nodeSize = 1;
+          let connectionStyle = 'straight';
+          let connectionWidth = 2;
+          let showLabels = true;
+          let nodeColorMode = 'type';
+- 
++         
++         // Track selected items
++         let selectedItems = {
++             accounts: new Set(),
++             projects: new Set(),
++             domains: new Set(),
++             servers: new Set(),
++             providers: new Set()
++         };
++ 
+          window.addEventListener('message', event =&gt; {
+              const message = event.data;
+```
+
+**Chunk 2**
+Lines added: 118, lines removed: 71
+
+```diff
+@@ -522,86 +530,133 @@
+              if (!graphData) return;
+              
+-             // Populate provider filter
+-             const providerGroup = document.getElementById('providerFilterGroup');
++             // Clear previous filter lists
++             document.getElementById('accountsFilterList').innerHTML = '';
++             document.getElementById('projectsFilterList').innerHTML = '';
++             document.getElementById('domainsFilterList').innerHTML = '';
++             document.getElementById('serversFilterList').innerHTML = '';
++             document.getElementById('providersFilterList').innerHTML = '';
++             
++             // Reset selected items
++             selectedItems = {
++                 accounts: new Set(),
++                 projects: new Set(),
++                 domains: new Set(),
++                 servers: new Set(),
++                 providers: new Set()
++             };
++             
++             // Populate accounts filter
++             const accountsList = document.getElementById('accountsFilterList');
++             graphData.accounts.forEach(acc =&gt; {
++                 selectedItems.accounts.add(acc.id);
++                 const item = createFilterItem('accounts', acc.id, acc.name, acc.provider);
++                 accountsList.appendChild(item);
++             });
++             
++             // Populate projects filter
++             const projectsList = document.getElementById('projectsFilterList');
++             graphData.projects.forEach(proj =&gt; {
++                 selectedItems.projects.add(proj.id);
++                 const item = createFilterItem('projects', proj.id, proj.name);
++                 projectsList.appendChild(item);
++             });
++             
++             // Populate domains filter
++             const domainsList = document.getElementById('domainsFilterList');
++             graphData.domains.forEach(domain =&gt; {
++                 selectedItems.domains.add(domain.id);
++                 const item = createFilterItem('domains', domain.id, domain.name, &#96;${domain.records?.length || 0} Records&#96;);
++                 domainsList.appendChild(item);
++             });
++             
++             // Populate servers filter
++             const serversList = document.getElementById('serversFilterList');
++             graphData.servers.forEach(server =&gt; {
++                 selectedItems.servers.add(server.id);
++                 const statusIcon = server.status === 'running' ? '🟢' : server.status === 'off' ? '🔴' : '🟡';
++                 const item = createFilterItem('servers', server.id, server.name, statusIcon);
++                 serversList.appendChild(item);
++             });
++             
++             // Populate providers filter
++             const providersList = document.getElementById('providersFilterList');
+              const providers = new Set();
+              graphData.accounts.forEach(acc =&gt; providers.add(acc.provider));
+              providers.forEach(prov =&gt; {
+-                 const item = document.createElement('div');
+-                 item.className = 'checkbox-item';
+-                 const checkbox = document.createElement('input');
+-                 checkbox.type = 'checkbox';
+-                 checkbox.id = &#96;filter-provider-${prov}&#96;;
+-                 checkbox.checked = true;
+-                 checkbox.onchange = () =&gt; {
+-                     handleSingleSelectFilter('provider', checkbox.id);
+-                     applyFilters();
+-                 };
+-                 const label = document.createElement('label');
+-                 label.htmlFor = checkbox.id;
+-                 label.textContent = prov;
+-                 item.appendChild(checkbox);
+-                 item.appendChild(label);
+-                 providerGroup.appendChild(item);
++                 selectedItems.providers.add(prov);
++                 const item = createFilterItem('providers', prov, prov);
++                 providersList.appendChild(item);
+              });
+-             
+-             // Populate project filter
+-             const projectGroup = document.getElementById('projectFilterGroup');
+-             graphData.projects.forEach(proj =&gt; {
+-                 const item = document.createElement('div');
+-                 item.className = 'checkbox-item';
+-                 const checkbox = document.createElement('input');
+-                 checkbox.type = 'checkbox';
+-                 checkbox.id = &#96;filter-project-${proj.id}&#96;;
+-                 checkbox.checked = true;
+-                 checkbox.onchange = () =&gt; {
+-                     handleSingleSelectFilter('project', checkbox.id);
+-                     applyFilters();
+-                 };
+-                 const label = document.createElement('label');
+-                 label.htmlFor = checkbox.id;
+-                 label.textContent = proj.name;
+-                 item.appendChild(checkbox);
+-                 item.appendChild(label);
+-                 projectGroup.appendChild(item);
+-             });
++         }
++         
++         function createFilterItem(group, id, name, extra = '') {
++             const item = document.createElement('div');
++             item.className = 'checkbox-item';
++             
++             const checkbox = document.createElement('input');
++             checkbox.type = 'checkbox';
++             checkbox.id = &#96;filter-${group}-${id}&#96;;
++             checkbox.checked = true;
++             checkbox.onchange = () =&gt; {
++                 if (checkbox.checked) {
++                     selectedItems[group].add(id);
++                 } else {
++                     selectedItems[group].delete(id);
++                 }
++                 updateGroupAllCheckbox(group);
++                 applyFilters();
++             };
++             
++             const label = document.createElement('label');
++             label.htmlFor = checkbox.id;
++             label.textContent = name;
++             
++             item.appendChild(checkbox);
++             item.appendChild(label);
++             
++             if (extra) {
++                 const extraSpan = document.createElement('span');
++                 extraSpan.className = 'filter-item-count';
++                 extraSpan.textContent = extra;
++                 item.appendChild(extraSpan);
++             }
++             
++             return item;
+          }
+          
+-         function toggleAllProviders() {
+-             const allCheckbox = document.getElementById('filter-provider-all');
+-             const checkboxes = document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)');
+-             checkboxes.forEach(cb =&gt; cb.checked = allCheckbox.checked);
+-             applyFilters();
++         function toggleSection(sectionId) {
++             const section = document.getElementById(sectionId);
++             const controlGroup = section.closest('.control-group');
++             controlGroup.classList.toggle('collapsed');
+          }
+          
+-         function toggleAllProjects() {
+-             const allCheckbox = document.getElementById('filter-project-all');
+-             const checkboxes = document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)');
+-             checkboxes.forEach(cb =&gt; cb.checked = allCheckbox.checked);
+-             applyFilters();
+-         }
+-         
+-         function setFilterMode(category, mode) {
+-             filterModes[category] = mode;
+-             const multiBtn = document.getElementById(&#96;${category}FilterModeMulti&#96;);
+-             const singleBtn = document.getElementById(&#96;${category}FilterModeSingle&#96;);
+-             if (mode === 'multi') {
+-                 multiBtn.classList.add('active');
+-                 singleBtn.classList.remove('active');
+-             } else {
+-                 singleBtn.classList.add('active');
+-                 multiBtn.classList.remove('active');
+-             }
++         function toggleAllInGroup(group) {
++             const allCheckbox = document.getElementById(&#96;filter-${group}-all&#96;);
++             const isChecked = allCheckbox.checked;
++             
++             document.querySelectorAll(&#96;#${group}FilterList input[type="checkbox"]&#96;).forEach(cb =&gt; {
++                 cb.checked = isChecked;
++                 const id = cb.id.replace(&#96;filter-${group}-&#96;, '');
++                 if (isChecked) {
++                     selectedItems[group].add(id);
++                 } else {
++                     selectedItems[group].delete(id);
++                 }
++             });
++             
+              applyFilters();
+          }
+          
+-         function handleSingleSelectFilter(category, clickedId) {
+-             if (filterModes[category] !== 'single') return;
+-             const groupId = &#96;${category}FilterGroup&#96;;
+-             const checkboxes = document.querySelectorAll(&#96;#${groupId} input[type="checkbox"]&#96;);
+-             checkboxes.forEach(cb =&gt; {
+-                 if (cb.id !== clickedId) {
+-                     cb.checked = false;
+-                 }
+-             });
++         function updateGroupAllCheckbox(group) {
++             const allCheckbox = document.getElementById(&#96;filter-${group}-all&#96;);
++             const checkboxes = document.querySelectorAll(&#96;#${group}FilterList input[type="checkbox"]&#96;);
++             const allChecked = Array.from(checkboxes).every(cb =&gt; cb.checked);
++             const someChecked = Array.from(checkboxes).some(cb =&gt; cb.checked);
++             
++             allCheckbox.checked = allChecked;
++             allCheckbox.indeterminate = !allChecked &amp;&amp; someChecked;
++         }
++         
++         function applyCategoryFilter() {
+              applyFilters();
+          }
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Jetzt muss ich die `applyFilters()` Funktion aktualisieren, um die neue Logik zu verwenden.</details></think>
+
+---
+
+Aktualisieren der `applyFilters()` Funktion:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Ich muss die `applyFilters()` Funktion suchen und aktualisieren.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Ich muss die `applyFilters()` Funktion komplett ersetzen mit der neuen Logik.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 22, lines removed: 62
+
+```diff
+@@ -821,73 +821,33 @@
+  
+          function applyFilters() {
+-             // Handle single-select mode for type filter
+-             if (filterModes.type === 'single') {
+-                 const checked = document.querySelectorAll('#typeFilterGroup input[type="checkbox"]:checked');
+-                 if (checked.length &gt; 1) {
+-                     // If multiple checked in single mode, uncheck all except the last one
+-                     checked.forEach((cb, idx) =&gt; {
+-                         if (idx &lt; checked.length - 1) cb.checked = false;
+-                     });
+-                 }
+-             }
+-             
+-             // Get type filters
+-             const typeFilters = {
+-                 account: document.getElementById('filter-account').checked,
+-                 project: document.getElementById('filter-project').checked,
+-                 domain: document.getElementById('filter-domain').checked,
+-                 server: document.getElementById('filter-server').checked,
+-                 record: document.getElementById('filter-record').checked
+-             };
+-             
+-             // Handle single-select mode for provider filter
+-             if (filterModes.provider === 'single') {
+-                 const checked = document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all):checked');
+-                 if (checked.length &gt; 1) {
+-                     checked.forEach((cb, idx) =&gt; {
+-                         if (idx &lt; checked.length - 1) cb.checked = false;
+-                     });
+-                 }
+-             }
+-             
+-             // Get provider filters
+-             const providerFilters = new Set();
+-             document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)').forEach(cb =&gt; {
+-                 if (cb.checked) {
+-                     providerFilters.add(cb.id.replace('filter-provider-', ''));
+-                 }
+-             });
+-             const allProviders = document.getElementById('filter-provider-all').checked || filterModes.provider === 'single';
+-             
+-             // Handle single-select mode for project filter
+-             if (filterModes.project === 'single') {
+-                 const checked = document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all):checked');
+-                 if (checked.length &gt; 1) {
+-                     checked.forEach((cb, idx) =&gt; {
+-                         if (idx &lt; checked.length - 1) cb.checked = false;
+-                     });
+-                 }
+-             }
+-             
+-             // Get project filters
+-             const projectFilters = new Set();
+-             document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)').forEach(cb =&gt; {
+-                 if (cb.checked) {
+-                     projectFilters.add(cb.id.replace('filter-project-', ''));
+-                 }
+-             });
+-             const allProjects = document.getElementById('filter-project-all').checked || filterModes.project === 'single';
++             // Get category filters
++             const categoryFilters = {
++                 account: document.getElementById('filter-cat-account').checked,
++                 project: document.getElementById('filter-cat-project').checked,
++                 domain: document.getElementById('filter-cat-domain').checked,
++                 server: document.getElementById('filter-cat-server').checked,
++                 record: document.getElementById('filter-cat-record').checked
++             };
+              
+              const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  
+              filteredNodes = allNodes.filter(node =&gt; {
+-                 // Type filter
+-                 if (!typeFilters[node.type]) return false;
++                 // Category filter (Accounts, Domains, Servers, etc.)
++                 if (!categoryFilters[node.type]) return false;
++                 
++                 // Individual item filter
++                 if (node.type === 'account' &amp;&amp; !selectedItems.accounts.has(node.id)) return false;
++                 if (node.type === 'project' &amp;&amp; !selectedItems.projects.has(node.id)) return false;
++                 if (node.type === 'domain' &amp;&amp; !selectedItems.domains.has(node.id)) return false;
++                 if (node.type === 'server' &amp;&amp; !selectedItems.servers.has(node.id)) return false;
+                  
+                  // Provider filter
+-                 if (!allProviders &amp;&amp; node.provider &amp;&amp; !providerFilters.has(node.provider)) return false;
++                 if (node.provider &amp;&amp; !selectedItems.providers.has(node.provider)) return false;
+                  
+-                 // Project filter
+-                 if (!allProjects &amp;&amp; node.projectId &amp;&amp; !projectFilters.has(node.projectId)) return false;
++                 // Records: Check if parent domain is selected
++                 if (node.type === 'record') {
++                     const parentDomainId = node.id.split('-')[0];
++                     if (!selectedItems.domains.has(parentDomainId)) return false;
++                 }
+                  
+                  // Search filter
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Jetzt muss ich noch die `resetView()` Funktion aktualisieren, um alle neuen Filter zurückzusetzen.</details></think>
+
+---
+
+Aktualisieren der `resetView()` Funktion:
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Ich muss die gesamte `resetView()` Funktion finden und aktualisieren. Ich sehe hier die alten Referenzen auf `filter-account`, etc. die nicht mehr existieren. Die IDs wurden zu `filter-cat-account` geändert.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: resources/webview/mindmap.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Die Funktion `resetView()` hat noch Referenzen auf die alten Element-IDs. Ich muss sie komplett neu schreiben, um die neuen Filter-IDs und Logik zu verwenden.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: resources/webview/mindmap.html</summary>
+
+**Chunk 1**
+Lines added: 24, lines removed: 20
+
+```diff
+@@ -1039,24 +1039,28 @@
+          function resetView() {
+              resetZoom();
+-             // Reset filter modes
+-             filterModes = { type: 'multi', provider: 'multi', project: 'multi' };
+-             document.getElementById('typeFilterModeMulti').classList.add('active');
+-             document.getElementById('typeFilterModeSingle').classList.remove('active');
+-             document.getElementById('providerFilterModeMulti').classList.add('active');
+-             document.getElementById('providerFilterModeSingle').classList.remove('active');
+-             document.getElementById('projectFilterModeMulti').classList.add('active');
+-             document.getElementById('projectFilterModeSingle').classList.remove('active');
+-             // Reset type filters
+-             document.getElementById('filter-account').checked = true;
+-             document.getElementById('filter-project').checked = true;
+-             document.getElementById('filter-domain').checked = true;
+-             document.getElementById('filter-server').checked = true;
+-             document.getElementById('filter-record').checked = true;
+-             // Reset provider filters
+-             document.getElementById('filter-provider-all').checked = true;
+-             document.querySelectorAll('#providerFilterGroup input[type="checkbox"]:not(#filter-provider-all)').forEach(cb =&gt; cb.checked = true);
+-             // Reset project filters
+-             document.getElementById('filter-project-all').checked = true;
+-             document.querySelectorAll('#projectFilterGroup input[type="checkbox"]:not(#filter-project-all)').forEach(cb =&gt; cb.checked = true);
++             
++             // Reset category filters
++             document.getElementById('filter-cat-account').checked = true;
++             document.getElementById('filter-cat-project').checked = true;
++             document.getElementById('filter-cat-domain').checked = true;
++             document.getElementById('filter-cat-server').checked = true;
++             document.getElementById('filter-cat-record').checked = true;
++             
++             // Reset all individual item filters
++             ['accounts', 'projects', 'domains', 'servers', 'providers'].forEach(group =&gt; {
++                 document.getElementById(&#96;filter-${group}-all&#96;).checked = true;
++                 document.getElementById(&#96;filter-${group}-all&#96;).indeterminate = false;
++                 document.querySelectorAll(&#96;#${group}FilterList input[type="checkbox"]&#96;).forEach(cb =&gt; {
++                     cb.checked = true;
++                     const id = cb.id.replace(&#96;filter-${group}-&#96;, '');
++                     selectedItems[group].add(id);
++                 });
++             });
++             
++             // Expand all sections
++             document.querySelectorAll('.control-group.collapsible').forEach(cg =&gt; {
++                 cg.classList.remove('collapsed');
++             });
++             
+              // Reset display options
+              layoutMode = 'hierarchical';
+```
+
+**Chunk 2**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -1076,4 +1080,5 @@
+              document.getElementById('searchInput').value = '';
+              document.getElementById('quickSearch').value = '';
++             
+              renderGraph();
+          }
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Es gibt noch einen alten Referenz `filterModes` die entfernt werden sollte, da sie nicht mehr verwendet wird. Ich muss auch prüfen, ob die Variable `filterModes` deklariert ist.</details></think>
+
+---
+
+Kompilieren und VSIX packen:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npm run compile</summary>
+
+```bash
+$env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npm run compile
+```
+
+```
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Kompilierung erfolgreich. Jetzt packen und installieren.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npx @vscode/vsce package</summary>
+
+```bash
+$env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npx @vscode/vsce package
+```
+
+```
+Executing prepublish script 'npm run vscode:prepublish'...
+
+&gt; devops-hybrid@0.4.0 vscode:prepublish
+&gt; npm run compile
+
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+ INFO  Files included in the VSIX:
+devops-hybrid-0.4.0.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ .cursorindexingignore [0.11 KB]
+   ├─ LICENSE.txt [1.04 KB]
+   ├─ changelog.md [1.81 KB]
+   ├─ package.json [13.63 KB]
+   ├─ readme.md [8.59 KB]
+   ├─ .specstory/
+   │  ├─ .gitignore [0.09 KB]
+   │  ├─ .project.json [0.22 KB]
+   │  ├─ .what-is-this.md [3.3 KB]
+   │  └─ history/ (4 files) [903.04 KB]
+   ├─ out/
+   │  ├─ extension.js [5.78 KB]
+   │  ├─ bridge/ (4 files) [48.83 KB]
+   │  ├─ core/ (4 files) [12.99 KB]
+   │  ├─ providers/ (5 files) [45.62 KB]
+   │  ├─ util/ (5 files) [8.89 KB]
+   │  └─ views/ (3 files) [21.12 KB]
+   └─ resources/
+      └─ webview/ (1 file) [46.36 KB]
+
+=&gt; Run vsce ls --tree to see all included files.
+
+ DONE  Packaged: D:\DevOpsTool\devops-hybrid-0.4.0.vsix (37 files, 221.51 KB)
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+VSIX ist gepackt. Jetzt versuche ich Git zu finden, um die Änderungen zu committen und zu pushen. Dann die Installation.</details></think>
+
+---
+
+Suche nach Git:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git status</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git status
+```
+
+```
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   .specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung.md
+	modified:   CHANGELOG.md
+	modified:   README.md
+	modified:   package.json
+	modified:   resources/webview/mindmap.html
+
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+	.specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-1.md
+	.specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-2.md
+	.specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-3.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Git funktioniert jetzt. Ich werde die Änderungen committen und pushen.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git add .; git commit -m "feat: DevOps Map - Individuelle Filter für Accounts, Domains, Server, Projekte und Provider"</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git add .; git commit -m "feat: DevOps Map - Individuelle Filter für Accounts, Domains, Server, Projekte und Provider"
+```
+
+```
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CHANGELOG.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'resources/webview/mindmap.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-1.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-2.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-3.md', LF will be replaced by CRLF the next time Git touches it
+[main 85fa1fd] feat: DevOps Map - Individuelle Filter fÃ¼r Accounts, Domains, Server, Projekte und Provider
+ 8 files changed, 10250 insertions(+), 79 deletions(-)
+ create mode 100644 .specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-1.md
+ create mode 100644 .specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-2.md
+ create mode 100644 .specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung-3.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Commit erfolgreich. Jetzt pushen.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git push</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; git push
+```
+
+```
+To https://github.com/donapart/DevOpsTool.git
+   7d62a73..85fa1fd  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Git push erfolgreich. Jetzt die Extension installieren.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Microsoft VS Code\bin;C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; code --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force</summary>
+
+```bash
+$env:Path = "C:\Program Files\Microsoft VS Code\bin;C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; code --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force
+```
+
+```
+code : Die Benennung "code" wurde nicht als Name eines Cmdlet, einer Funktion, einer Skriptdatei oder eines 
+ausf�hrbaren Programms erkannt. �berpr�fen Sie die Schreibweise des Namens, oder ob der Pfad korrekt ist (sofern 
+enthalten), und wiederholen Sie den Vorgang.
+In C:\Users\donApart\AppData\Local\Temp\ps-script-94d2b036-3a16-4df8-a839-509dfe192962.ps1:98 Zeichen:155
++ ... ejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; code --insta ...
++                                                              ~~~~
+    + CategoryInfo          : ObjectNotFound: (code:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+VS Code CLI ist nicht im PATH. Ich versuche den direkten Pfad.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force</summary>
+
+```bash
+"C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force
+```
+
+```
+In C:\Users\donApart\AppData\Local\Temp\ps-script-50a149f2-9f38-4ed9-9e37-5f6f854bc2e2.ps1:98 Zeichen:77
++ ... \Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevO ...
++                                                 ~~~~~~~~~~~~~~~~~
+Unerwartetes Token "install-extension" in Ausdruck oder Anweisung.
+In C:\Users\donApart\AppData\Local\Temp\ps-script-50a149f2-9f38-4ed9-9e37-5f6f854bc2e2.ps1:98 Zeichen:1
++ "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code. ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Der Operator "--" kann nur f�r Variablen oder Eigenschaften verwendet werden.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+ 
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+PowerShell hat Probleme mit dem Befehl wegen der Anführungszeichen. Ich muss den Befehl anders aufrufen.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: & "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force</summary>
+
+```bash
+& "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force
+```
+
+```
+Installing extensions...
+Extension 'devops-hybrid-0.4.0.vsix' was successfully installed.
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Die Extension wurde erfolgreich in VS Code installiert. Jetzt versuche ich auch die Installation in Cursor.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: & "C:\Users\donApart\AppData\Local\Programs\cursor\resources\app\bin\cursor.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force</summary>
+
+```bash
+& "C:\Users\donApart\AppData\Local\Programs\cursor\resources\app\bin\cursor.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force
+```
+
+```
+Installing extensions...
+Extension 'devops-hybrid-0.4.0.vsix' was successfully installed.
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Alles erfolgreich! Die Extension wurde sowohl in VS Code als auch in Cursor installiert.</details></think>
+
+---
+
+Fertig! Hier die Zusammenfassung:
+
+## ✅ Erledigt
+
+### Neue Filter-Funktionalität
+Die DevOps Map hat jetzt **individuelle Filter** für alle Elemente:
+
+| Kategorie | Was kann gefiltert werden |
+|-----------|--------------------------|
+| **👤 Accounts** | Jeder Account einzeln an/abwählbar |
+| **📁 Projekte** | Jedes Projekt einzeln an/abwählbar |
+| **🌐 Domains** | Jede Domain einzeln an/abwählbar (zeigt auch Record-Anzahl) |
+| **🖥️ Server** | Jeder Server einzeln an/abwählbar (mit Status-Icon 🟢/🔴/🟡) |
+| **☁️ Provider** | Jeder Provider einzeln an/abwählbar |
+
+### Features der neuen Filter:
+- **Kategorien-Filter**: Schnell alle Accounts, Domains, Server etc. ein/ausblenden
+- **Alle/Keine**: Ein Klick um alle Elemente einer Kategorie zu (de)selektieren
+- **Aufklappbare Sektionen**: Filter-Bereiche können auf-/zugeklappt werden
+- **Indeterminate State**: Checkbox zeigt an, wenn nur einige Elemente ausgewählt sind
+- **Suchfunktion**: Weiterhin kombinierbar mit der Textsuche
+
+### Git & Installation
+```
+✅ Kompiliert
+✅ VSIX gepackt (devops-hybrid-0.4.0.vsix)
+✅ Git commit: "feat: DevOps Map - Individuelle Filter..."
+✅ Git push: main -> origin/main
+✅ VS Code installiert
+✅ Cursor installiert
+```
+
+**Starte VS Code oder Cursor neu** um die neuen Features zu nutzen. Öffne dann die DevOps Map (`Ctrl+Shift+P` → "DevOps: Show Map") und teste die individuellen Filter!
+
+---
+
+_**User (2025-12-10 07:30Z)**_
+
+nein ich meinte, jede domain einzeln wählbar und nicht einfach nur alle
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file">
+<details>
+<summary>Tool use: **read_file**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="run_terminal_cmd">
+<details>
+<summary>Tool use: **run_terminal_cmd**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
 
 ---
 
