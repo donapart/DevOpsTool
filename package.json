@@ -4,7 +4,6 @@
   "description": "Hybrid Cloud Management for IONOS and Hetzner within VS Code. Manage DNS records and Cloud servers without leaving your editor.",
   "version": "0.1.0",
   "publisher": "donapart",
-  "icon": "resources/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/donapart/devops-hybrid"

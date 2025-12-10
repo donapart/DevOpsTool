@@ -36,11 +36,15 @@ export interface Server {
   project?: string;
 }
 
+export interface RescueModeResult {
+  rootPassword: string;
+}
+
 export interface IComputeProvider extends IProvider {
   listProjects(): Promise<string[]>;
   listServers(project?: string): Promise<Server[]>;
   rebootServer(id: string): Promise<void>;
   powerOffServer(id: string): Promise<void>;
-  enableRescueMode(id: string): Promise<void>;
+  enableRescueMode(id: string): Promise<RescueModeResult>;
   createSnapshot(id: string, name?: string): Promise<void>;
 }
