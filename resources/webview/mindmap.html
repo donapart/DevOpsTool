@@ -958,13 +958,7 @@
             const canvas = document.getElementById('canvas');
             canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
             document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
-            
-            // Update SVG transform to match canvas
-            const svg = document.getElementById('connections-svg');
-            if (svg) {
-                svg.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-                svg.style.transformOrigin = '0 0';
-            }
+            // SVG is inside canvas, so it transforms automatically with the canvas
         }
 
         function zoomIn() {
