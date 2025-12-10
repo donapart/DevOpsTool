@@ -1,3 +1,11 @@
+/**
+ * Cloudflare DNS Provider (Template)
+ * 
+ * API Documentation: https://developers.cloudflare.com/api/
+ * 
+ * TODO: Implement actual API calls
+ */
+
 import { IDnsProvider, Domain, DnsRecord } from '../core/providers';
 import { AccountManager, Account, AccountColorMap } from '../core/accounts';
 import * as vscode from 'vscode';
@@ -5,20 +13,20 @@ import { SimpleCache } from '../util/cache';
 import { logDebug, logInfo, logError } from '../util/logging';
 import { AuthError, ApiError, isAuthError } from '../util/errors';
 
-const TAG = 'IONOS-DNS';
+const TAG = 'Cloudflare';
 
-export interface IonosDomainWithAccount extends Domain {
+export interface CloudflareDomainWithAccount extends Domain {
   accountId: string;
   accountName: string;
   accountColor: string;
 }
 
-export class IonosDnsProvider implements IDnsProvider {
-  readonly id = 'ionos-dns';
-  readonly label = 'IONOS DNS';
+export class CloudflareProvider implements IDnsProvider {
+  readonly id = 'cloudflare';
+  readonly label = 'Cloudflare';
   readonly type = 'dns' as const;
 
-  private cache = new SimpleCache<IonosDomainWithAccount[]>(30000);
+  private cache = new SimpleCache<CloudflareDomainWithAccount[]>(30000);
 
   constructor(
     private accountManager: AccountManager,
@@ -26,7 +34,7 @@ export class IonosDnsProvider implements IDnsProvider {
   ) {}
 
   async isConfigured(): Promise<boolean> {
-    return this.accountManager.hasAccountsForProvider('ionos-dns');
+    return this.accountManager.hasAccountsForProvider('cloudflare');
   }
 
   invalidateCache(): void {
@@ -34,10 +42,10 @@ export class IonosDnsProvider implements IDnsProvider {
   }
 
   getAccounts(): Account[] {
-    return this.accountManager.getByProvider('ionos-dns');
+    return this.accountManager.getByProvider('cloudflare');
   }
 
-  async listDomains(): Promise<IonosDomainWithAccount[]> {
+  async listDomains(): Promise<CloudflareDomainWithAccount[]> {
     const accounts = this.getAccounts();
     
     if (accounts.length === 0) {
@@ -52,7 +60,7 @@ export class IonosDnsProvider implements IDnsProvider {
     }
 
     return this.cache.getOrFetch('all-domains', async () => {
-      const allDomains: IonosDomainWithAccount[] = [];
+      const allDomains: CloudflareDomainWithAccount[] = [];
 
       for (const account of accounts) {
         try {
@@ -78,44 +86,52 @@ export class IonosDnsProvider implements IDnsProvider {
     });
   }
 
-  private async fetchDomainsForAccount(account: Account, token: string): Promise<IonosDomainWithAccount[]> {
-    logInfo(TAG, `Fetching domains for account: ${account.name}`);
+  private async fetchDomainsForAccount(account: Account, token: string): Promise<CloudflareDomainWithAccount[]> {
+    logInfo(TAG, `Fetching zones for account: ${account.name}`);
 
-    const response = await fetch('https://api.hosting.ionos.com/dns/v1/zones', { 
+    // Cloudflare API: GET /zones
+    const response = await fetch('https://api.cloudflare.com/client/v4/zones', { 
       headers: { 
-        'X-API-Key': token,
-        'Accept': 'application/json'
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       } 
     });
 
     if (!response.ok) {
       if (isAuthError(response.status)) {
-        throw new AuthError('IONOS');
+        throw new AuthError('Cloudflare');
       }
-      throw new ApiError('IONOS', response.status, response.statusText);
+      throw new ApiError('Cloudflare', response.status, response.statusText);
     }
 
-    const zones: any[] = await response.json() as any[];
+    const data: any = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.errors?.[0]?.message || 'Cloudflare API Error');
+    }
+
+    const zones = data.result || [];
     logDebug(TAG, `Found ${zones.length} zones for ${account.name}`);
 
-    const domainPromises = zones.map(async (zone) => {
+    // Fetch records for each zone in parallel
+    const domainPromises = zones.map(async (zone: any) => {
       try {
         const recordsResponse = await fetch(
-          `https://api.hosting.ionos.com/dns/v1/zones/${zone.id}`,
+          `https://api.cloudflare.com/client/v4/zones/${zone.id}/dns_records`,
           {
             headers: { 
-              'X-API-Key': token,
-              'Accept': 'application/json'
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             } 
           }
         );
         
         if (recordsResponse.ok) {
-          const zoneDetails: any = await recordsResponse.json();
-          const records: DnsRecord[] = (zoneDetails.records || []).map((r: any) => ({
+          const recordsData: any = await recordsResponse.json();
+          const records: DnsRecord[] = (recordsData.result || []).map((r: any) => ({
             id: r.id,
             type: r.type,
-            name: r.name || '@',
+            name: r.name.replace(`.${zone.name}`, '') || '@',
             value: r.content,
             ttl: r.ttl
           }));
@@ -149,105 +165,57 @@ export class IonosDnsProvider implements IDnsProvider {
   async updateRecord(domainId: string, recordId: string, newValue: string, ttl?: number, accountId?: string): Promise<void> {
     const account = accountId 
       ? this.accountManager.getById(accountId)
-      : this.accountManager.getDefaultForProvider('ionos-dns');
+      : this.accountManager.getDefaultForProvider('cloudflare');
     
     if (!account) throw new Error('Kein Account konfiguriert');
     
     const token = await this.accountManager.getToken(account.id);
-    if (!token) throw new AuthError('IONOS');
+    if (!token) throw new AuthError('Cloudflare');
 
     logInfo(TAG, `Updating record ${recordId} in zone ${domainId} (Account: ${account.name})`);
 
+    // Get current record
     const getRes = await fetch(
-      `https://api.hosting.ionos.com/dns/v1/zones/${domainId}/records/${recordId}`, 
-      { headers: { 'X-API-Key': token } }
+      `https://api.cloudflare.com/client/v4/zones/${domainId}/dns_records/${recordId}`, 
+      { headers: { 'Authorization': `Bearer ${token}` } }
     );
     
     if (!getRes.ok) {
       if (isAuthError(getRes.status)) {
-        throw new AuthError('IONOS');
+        throw new AuthError('Cloudflare');
       }
-      throw new ApiError('IONOS', getRes.status, getRes.statusText);
+      throw new ApiError('Cloudflare', getRes.status, getRes.statusText);
     }
 
-    const currentRecord: any = await getRes.json();
+    const recordData: any = await getRes.json();
+    const currentRecord = recordData.result;
 
-    const updatePayload = {
-      name: currentRecord.name,
-      type: currentRecord.type,
-      content: newValue,
-      ttl: ttl || currentRecord.ttl,
-      prio: currentRecord.prio
-    };
-
+    // Update record
     const response = await fetch(
-      `https://api.hosting.ionos.com/dns/v1/zones/${domainId}/records/${recordId}`,
+      `https://api.cloudflare.com/client/v4/zones/${domainId}/dns_records/${recordId}`,
       {
         method: 'PUT',
         headers: { 
-          'X-API-Key': token,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(updatePayload)
+        body: JSON.stringify({
+          type: currentRecord.type,
+          name: currentRecord.name,
+          content: newValue,
+          ttl: ttl || currentRecord.ttl,
+          proxied: currentRecord.proxied
+        })
       }
     );
 
     if (!response.ok) {
       const err = await response.text();
-      throw new ApiError('IONOS', response.status, response.statusText, err);
+      throw new ApiError('Cloudflare', response.status, response.statusText, err);
     }
 
     logInfo(TAG, `Record ${recordId} updated successfully`);
     this.invalidateCache();
   }
-
-  async setRecordTtl(domainId: string, recordId: string, ttl: number, accountId?: string): Promise<void> {
-    const account = accountId 
-      ? this.accountManager.getById(accountId)
-      : this.accountManager.getDefaultForProvider('ionos-dns');
-    
-    if (!account) throw new Error('Kein Account konfiguriert');
-    
-    const token = await this.accountManager.getToken(account.id);
-    if (!token) throw new AuthError('IONOS');
-
-    logInfo(TAG, `Setting TTL for record ${recordId} to ${ttl}s`);
-
-    const getRes = await fetch(
-      `https://api.hosting.ionos.com/dns/v1/zones/${domainId}/records/${recordId}`, 
-      { headers: { 'X-API-Key': token } }
-    );
-    
-    if (!getRes.ok) {
-      throw new ApiError('IONOS', getRes.status, getRes.statusText);
-    }
-
-    const currentRecord: any = await getRes.json();
-
-    const updatePayload = {
-      name: currentRecord.name,
-      type: currentRecord.type,
-      content: currentRecord.content,
-      ttl: ttl,
-      prio: currentRecord.prio
-    };
-
-    const response = await fetch(
-      `https://api.hosting.ionos.com/dns/v1/zones/${domainId}/records/${recordId}`,
-      {
-        method: 'PUT',
-        headers: { 
-          'X-API-Key': token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatePayload)
-      }
-    );
-
-    if (!response.ok) {
-      throw new ApiError('IONOS', response.status, response.statusText);
-    }
-
-    this.invalidateCache();
-  }
 }
+

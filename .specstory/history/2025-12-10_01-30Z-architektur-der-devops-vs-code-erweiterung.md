@@ -6632,53 +6632,660 @@ wäre schön wenn man links im panel von devops , mit gleich zur token / key ein
 
 _**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
+The user wants to have a quick way to access the token/key input directly from the DevOps panel in the sidebar. This would be a "Welcome" view or action buttons when no tokens are configured.
 
+I can add this in a few ways:
+1. Add a "welcome" view that shows when no tokens are configured
+2. Add buttons/actions in the view title bar
+3. Make the empty state items clickable to configure tokens
+
+Let me implement this by:
+1. Adding welcome views in package.json
+2. Adding context for when tokens are not configured
+3. Adding buttons in the view title
+
+Actually, the best UX would be:
+1. Welcome message in the views when not configured with a button to set tokens
+2. Gear icon or key icon in the view title bar that always lets you configure tokens
+
+Let me update the package.json to add these features.</details></think>
 
 ---
 
-
+Gute Idee! Ich füge Quick-Access Buttons für die Token-Eingabe direkt im DevOps Panel hinzu:
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file">
-<details>
-<summary>Tool use: **read_file**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: package.json</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
+I need to add:
+1. Key icons in the view title bar for quick token access
+2. Welcome views when no tokens are configured
 
-
----
-
-
-
----
-
-
+Let me update the package.json to add these features.</details></think>
 
 ---
 
+<tool-use data-tool-type="write" data-tool-name="search_replace">
 
+<details><summary>Tool use: **search_replace** • Edit file: package.json</summary>
+
+**Chunk 1**
+Lines added: 12, lines removed: 2
+
+```diff
+@@ -176,13 +176,23 @@
+      "menus": {
+        "view/title": [
++         {
++           "command": "devops.setIonosToken",
++           "when": "view == devopsDomainsView",
++           "group": "navigation@1"
++         },
++         {
++           "command": "devops.setHetznerToken",
++           "when": "view == devopsComputeView",
++           "group": "navigation@1"
++         },
+          {
+            "command": "devops.refreshAll",
+            "when": "view == devopsDomainsView || view == devopsComputeView",
+-           "group": "navigation"
++           "group": "navigation@2"
+          },
+          {
+            "command": "devops.showLogs",
+            "when": "view == devopsDomainsView || view == devopsComputeView",
+-           "group": "navigation"
++           "group": "navigation@3"
+          }
+        ],
+```
+
+</details>
+
+</tool-use>
 
 ---
 
-
-
----
-
-
+<think><details><summary>Thought Process</summary>
+Now let me also add viewsWelcome for a nicer experience when no tokens are configured.</details></think>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="search_replace">
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: package.json</summary>
+
+**Chunk 1**
+Lines added: 12, lines removed: undefined
+
+```diff
+@@ -275,4 +275,16 @@
+        ]
+      },
++     "viewsWelcome": [
++       {
++         "view": "devopsDomainsView",
++         "contents": "Willkommen beim DevOps Hybrid Cockpit!\n\nUm Ihre IONOS Domains zu sehen, konfigurieren Sie bitte Ihren API Token.\n[IONOS Token eingeben](command:devops.setIonosToken)\n\nSie finden Ihren Token in der [IONOS Developer Console](https://developer.hosting.ionos.de/).",
++         "when": "!devops.ionosConfigured"
++       },
++       {
++         "view": "devopsComputeView",
++         "contents": "Willkommen beim DevOps Hybrid Cockpit!\n\nUm Ihre Hetzner Server zu sehen, konfigurieren Sie bitte Ihren API Token.\n[Hetzner Token eingeben](command:devops.setHetznerToken)\n\nSie finden Ihren Token in der [Hetzner Cloud Console](https://console.hetzner.cloud/) unter Security → API Tokens.",
++         "when": "!devops.hetznerConfigured"
++       }
++     ],
+      "configuration": {
+        "title": "DevOps Hybrid Cockpit",
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to update the extension to set the context for whether tokens are configured. This will control when the welcome views are shown.</details></think>
+
+---
+
+Jetzt muss ich die Extension aktualisieren, damit sie den Kontext für die Welcome-Views setzt:
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: src/extension.ts</summary>
+
+**Chunk 1**
+Lines added: 13, lines removed: 2
+
+```diff
+@@ -25,10 +25,21 @@
+    vscode.window.registerTreeDataProvider('devopsComputeView', computeTreeProvider);
+  
+-   registerBridgeCommands(context, pm, ionosProvider, hetznerProvider);
++   // Update context for welcome views
++   async function updateTokenContext() {
++     const ionosConfigured = await ionosProvider.isConfigured();
++     const hetznerConfigured = await hetznerProvider.isConfigured();
++     vscode.commands.executeCommand('setContext', 'devops.ionosConfigured', ionosConfigured);
++     vscode.commands.executeCommand('setContext', 'devops.hetznerConfigured', hetznerConfigured);
++   }
++   
++   await updateTokenContext();
++ 
++   registerBridgeCommands(context, pm, ionosProvider, hetznerProvider, updateTokenContext);
+  
+    context.subscriptions.push(
+-     vscode.commands.registerCommand('devops.refreshAll', () =&gt; {
++     vscode.commands.registerCommand('devops.refreshAll', async () =&gt; {
+        ionosProvider.invalidateCache();
+        hetznerProvider.invalidateCache();
++       await updateTokenContext();
+        domainsTreeProvider.refresh();
+        computeTreeProvider.refresh();
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to update the commands.ts to accept the updateTokenContext function and call it after setting tokens.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: src/bridge/commands.ts</summary>
+
+**Chunk 1**
+Lines added: 2, lines removed: 1
+
+```diff
+@@ -55,5 +55,6 @@
+      pm: ProviderManager,
+      ionosProvider: IonosDnsProvider,
+-     hetznerProvider: HetznerCloudProvider
++     hetznerProvider: HetznerCloudProvider,
++     updateTokenContext: () =&gt; Promise&lt;void&gt;
+  ) {
+      context.subscriptions.push(
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to update the token set commands to call updateTokenContext after setting tokens.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: src/bridge/commands.ts</summary>
+
+**Chunk 1**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -73,4 +73,5 @@
+                  await context.secrets.store('ionos.dns.token', token);
+                  ionosProvider.invalidateCache();
++                 await updateTokenContext();
+                  vscode.window.showInformationMessage('✅ IONOS DNS Token gespeichert.');
+                  vscode.commands.executeCommand('devops.refreshAll');
+```
+
+**Chunk 2**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -89,4 +90,5 @@
+                  await context.secrets.store('hetzner.cloud.token', token);
+                  hetznerProvider.invalidateCache();
++                 await updateTokenContext();
+                  vscode.window.showInformationMessage('✅ Hetzner Cloud Token gespeichert.');
+                  vscode.commands.executeCommand('devops.refreshAll');
+```
+
+**Chunk 3**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -99,4 +101,5 @@
+                  await context.secrets.delete('ionos.dns.token');
+                  ionosProvider.invalidateCache();
++                 await updateTokenContext();
+                  vscode.window.showInformationMessage('IONOS Token gelöscht.');
+                  vscode.commands.executeCommand('devops.refreshAll');
+```
+
+**Chunk 4**
+Lines added: 1, lines removed: undefined
+
+```diff
+@@ -109,4 +112,5 @@
+                  await context.secrets.delete('hetzner.cloud.token');
+                  hetznerProvider.invalidateCache();
++                 await updateTokenContext();
+                  vscode.window.showInformationMessage('Hetzner Token gelöscht.');
+                  vscode.commands.executeCommand('devops.refreshAll');
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now let me compile and rebuild the extension.</details></think>
+
+---
+
+Jetzt kompiliere und paketiere ich die Extension neu:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; npm run compile</summary>
+
+```bash
+$env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; npm run compile
+```
+
+```
+
+&gt; devops-hybrid@0.1.0 compile
+&gt; tsc -p ./
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to update the version number before repackaging.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: package.json</summary>
+
+**Chunk 1**
+Lines added: 1, lines removed: 1
+
+```diff
+@@ -3,5 +3,5 @@
+    "displayName": "DevOps Hybrid Cockpit",
+    "description": "Hybrid Cloud Management for IONOS and Hetzner within VS Code. Manage DNS records and Cloud servers without leaving your editor.",
+-   "version": "0.1.0",
++   "version": "0.2.0",
+    "publisher": "donapart",
+    "repository": {
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now let me repackage the extension.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; vsce package --allow-missing-repository</summary>
+
+```bash
+$env:Path = "C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; vsce package --allow-missing-repository
+```
+
+```
+Executing prepublish script 'npm run vscode:prepublish'...
+
+&gt; devops-hybrid@0.2.0 vscode:prepublish
+&gt; npm run compile
+
+
+&gt; devops-hybrid@0.2.0 compile
+&gt; tsc -p ./
+
+ DONE  Packaged: D:\DevOpsTool\devops-hybrid-0.2.0.vsix (24 files, 74.14KB)
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now let me install the new version in VS Code.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: & "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.2.0.vsix --force</summary>
+
+```bash
+& "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.2.0.vsix --force
+```
+
+```
+Installing extensions...
+Extension 'devops-hybrid-0.2.0.vsix' was successfully installed.
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now let me commit and push these changes.</details></think>
+
+---
+
+**Fertig!** ✅ Extension v0.2.0 installiert.
+
+**Neue Features:**
+
+1. **🔑 Key-Icon in der Titelleiste** jedes Panels
+   - DOMAINS Panel → Klick auf 🔑 → IONOS Token eingeben
+   - COMPUTE Panel → Klick auf 🔑 → Hetzner Token eingeben
+
+2. **Welcome-Screen** wenn kein Token konfiguriert ist:
+   - Erklärender Text
+   - Direkter Button zum Token eingeben
+   - Link zur jeweiligen Console (IONOS/Hetzner)
+
+**So sieht es aus:**
+
+```
+╔═══════════════════════════════════════╗
+║ DOMAINS (IONOS)        🔑 🔄 📋      ║
+╠═══════════════════════════════════════╣
+║                                       ║
+║  Willkommen beim DevOps Hybrid        ║
+║  Cockpit!                             ║
+║                                       ║
+║  Um Ihre IONOS Domains zu sehen,      ║
+║  konfigurieren Sie bitte Ihren        ║
+║  API Token.                           ║
+║                                       ║
+║  [IONOS Token eingeben]               ║
+║                                       ║
+╚═══════════════════════════════════════╝
+```
+
+Soll ich auch committen und pushen?
+
+---
+
+_**User (2025-12-10 01:30Z)**_
+
+ja
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to commit and push the changes.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\bin;" + $env:Path; git add -A; git commit -m "feat: Quick-Access Token Buttons im Panel
+
+- Key-Icon in View-Titelleiste für schnelle Token-Eingabe
+- Welcome-Views mit Anleitung wenn Token fehlt
+- Links zu IONOS/Hetzner Developer Consoles
+- Version 0.2.0"</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\bin;" + $env:Path; git add -A; git commit -m "feat: Quick-Access Token Buttons im Panel
+
+- Key-Icon in View-Titelleiste für schnelle Token-Eingabe
+- Welcome-Views mit Anleitung wenn Token fehlt
+- Links zu IONOS/Hetzner Developer Consoles
+- Version 0.2.0"
+```
+
+```
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-architektur-der-devops-vs-code-erweiterung.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/bridge/commands.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/extension.ts', LF will be replaced by CRLF the next time Git touches it
+[main 5888983] feat: Quick-Access Token Buttons im Panel
+ 4 files changed, 1132 insertions(+), 6 deletions(-)
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now push to GitHub.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\bin;" + $env:Path; git push</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\bin;" + $env:Path; git push
+```
+
+```
+To https://github.com/donapart/DevOpsTool.git
+   17c188c..5888983  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Done! Pushed successfully.</details></think>
+
+---
+
+**Fertig!** ✅
+
+```
+main -> main (5888983)
+```
+
+Gepusht auf: **https://github.com/donapart/DevOpsTool**
+
+**Änderungen in v0.2.0:**
+- 🔑 Key-Icon in View-Titelleiste für schnelle Token-Eingabe
+- 📋 Welcome-Views mit Anleitung wenn Token fehlt
+- 🔗 Links zu IONOS/Hetzner Developer Consoles
+
+Starte VS Code neu, um die Änderungen zu sehen!
+
+---
+
+_**User (2025-12-10 01:30Z)**_
+
+kann man auch weitere provider hinzufügen? kann man auch weitere tokens und jedem farben je nach projekt  hinzufügen?
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user is asking about:
+1. Adding more providers (like AWS, DigitalOcean, etc.)
+2. Adding multiple tokens per provider (e.g., multiple IONOS accounts)
+3. Color-coding by project
+
+This is a great question about extensibility. The current architecture already supports adding new providers through the ProviderManager, but it doesn't support:
+- Multiple accounts/tokens per provider
+- Project-based color coding
+- A UI to manage multiple credentials
+
+Let me explain what's possible and what would need to be changed. I should ask the user which features they want to implement first, as this is a significant enhancement.</details></think>
+
+---
+
+**Ja, absolut!** Die Architektur ist bereits darauf vorbereitet. Hier sind die Möglichkeiten:
+
+---
+
+### 1. Weitere Provider hinzufügen
+
+Die `ProviderManager`-Architektur macht das einfach. Du müsstest nur:
+
+```
+src/providers/
+├── ionosDnsProvider.ts      ✅ existiert
+├── hetznerCloudProvider.ts  ✅ existiert
+├── ionosCloudProvider.ts    🆕 neu
+├── awsRoute53Provider.ts    🆕 neu
+├── cloudflareProvider.ts    🆕 neu
+├── digitalOceanProvider.ts  🆕 neu
+└── hetznerRobotProvider.ts  🆕 neu (Dedicated Server)
+```
+
+---
+
+### 2. Mehrere Tokens / Accounts pro Provider
+
+Aktuell: **1 Token pro Provider**
+Gewünscht: **Mehrere Tokens mit Projektnamen & Farben**
+
+**Konzept:**
+
+```
+┌─────────────────────────────────────────┐
+│ DOMAINS (IONOS)              🔑 🔄     │
+├─────────────────────────────────────────┤
+│ 🟢 Kunde: MeineAgentur                  │
+│   ├── 🌐 agentur-website.de            │
+│   └── 🌐 kunde-shop.com                │
+│ 🔵 Kunde: TechStartup                   │
+│   ├── 🌐 techstartup.io                │
+│   └── 🌐 app.techstartup.io            │
+│ 🟣 Privat                               │
+│   └── 🌐 meine-domain.de               │
+└─────────────────────────────────────────┘
+```
+
+---
+
+### 3. Was müsste geändert werden?
+
+| Feature | Aufwand | Beschreibung |
+|---------|---------|--------------|
+| **Multi-Account Store** | Mittel | Tokens als Array statt einzelner Wert speichern |
+| **Account Manager UI** | Mittel | QuickPick zum Hinzufügen/Entfernen von Accounts |
+| **Projekt-Labels & Farben** | Klein | Jeder Account bekommt Name + Farbe |
+| **Tree View Gruppierung** | Klein | Domains/Server nach Account gruppieren |
+| **Neue Provider** | Pro Provider ~2h | Interface implementieren, API anbinden |
+
+---
+
+### Welche Features soll ich implementieren?
+
+1. **Multi-Account Support** (mehrere IONOS/Hetzner Tokens mit Namen & Farben)
+2. **Neue Provider** (z.B. Cloudflare, AWS Route53, DigitalOcean)
+3. **Beides**
+
+Oder hast du einen spezifischen Provider im Kopf, den du als nächstes brauchst?
+
+---
+
+_**User (2025-12-10 01:30Z)**_
+
+3
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants both:
+1. Multi-Account Support (multiple tokens with names & colors)
+2. New Providers
+
+This is a significant feature. Let me plan this out:
+
+1. First, I need to create an account/credential management system
+2. Then update the providers to support multiple accounts
+3. Then add new provider implementations
+
+Let me start with the account management system.</details></think>
+
+---
+
+Perfekt! Ich baue beides ein: Multi-Account Support + neue Provider-Infrastruktur.
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Account-System: Datenmodell & Storage für Multi-Account mit Farben
+- [ ] Account Manager UI: Hinzufügen/Bearbeiten/Löschen von Accounts
+- [ ] Provider auf Multi-Account umstellen (IONOS, Hetzner)
+- [ ] Tree Views mit Account-Gruppierung und Farben
+- [ ] Neue Provider-Templates vorbereiten (Cloudflare, AWS, DO)
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="write">
 <details>
-<summary>Tool use: **search_replace**</summary>
+<summary>Tool use: **write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "relativeWorkspacePath": "src/core/accounts.ts",
+  "code": {
+    "code": "import *"
+  }
+}
+```
+Additional data:
+
+```json
+{
+  "codeblockId": "0e16a46c-8cf9-421a-91ed-3edc28e3dede"
+}
+```
+User decision: **accepted**
 
 Status: **loading**
 

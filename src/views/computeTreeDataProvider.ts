@@ -1,13 +1,18 @@
 import * as vscode from 'vscode';
 import { ProviderManager } from '../core/providerManager';
-import { IComputeProvider, Server } from '../core/providers';
+import { AccountManager, AccountColorLabels } from '../core/accounts';
+import { Server } from '../core/providers';
+import { HetznerCloudProvider, HetznerServerWithAccount } from '../providers/hetznerCloudProvider';
 import { logError } from '../util/logging';
 
 export class ComputeTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor(private pm: ProviderManager) {}
+  constructor(
+    private pm: ProviderManager,
+    private accountManager: AccountManager
+  ) {}
 
   refresh() {
     this._onDidChangeTreeData.fire();
@@ -20,23 +25,32 @@ export class ComputeTreeDataProvider implements vscode.TreeDataProvider<vscode.T
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
     try {
       if (!element) {
-        const computeProviders = this.pm.getComputeProviders();
-        return computeProviders.map(p => {
-          const item = new vscode.TreeItem(p.label, vscode.TreeItemCollapsibleState.Expanded);
-          item.contextValue = 'computeProvider';
-          item.id = p.id;
-          item.iconPath = new vscode.ThemeIcon('cloud');
-          return item;
-        });
+        // Root level: Show accounts grouped
+        const hetznerProvider = this.pm.getComputeProviders().find(p => p.id === 'hetzner-cloud') as HetznerCloudProvider | undefined;
+        if (!hetznerProvider) return [];
+
+        const accounts = hetznerProvider.getAccounts();
+        
+        if (accounts.length === 0) {
+          return [new AddAccountItem('hetzner-cloud')];
+        }
+
+        return accounts.map(account => new AccountTreeItem(account));
       }
 
-      const providerId = element.id;
-      if (providerId) {
-        const provider = this.pm.getComputeProviders().find(p => p.id === providerId);
-        if (provider) {
-          const servers = await provider.listServers();
-          return servers.map(s => new ServerTreeItem(s, provider.id));
+      // Account level: Show servers
+      if (element instanceof AccountTreeItem) {
+        const hetznerProvider = this.pm.getComputeProviders().find(p => p.id === 'hetzner-cloud') as HetznerCloudProvider | undefined;
+        if (!hetznerProvider) return [];
+
+        const allServers = await hetznerProvider.listServers();
+        const accountServers = allServers.filter(s => s.accountId === element.account.id);
+        
+        if (accountServers.length === 0) {
+          return [new EmptyItem('Keine Server gefunden')];
         }
+
+        return accountServers.map(s => new ServerTreeItem(s));
       }
 
       return [];
@@ -47,11 +61,21 @@ export class ComputeTreeDataProvider implements vscode.TreeDataProvider<vscode.T
   }
 }
 
+class AccountTreeItem extends vscode.TreeItem {
+  constructor(public readonly account: { id: string; name: string; color: string; isDefault?: boolean }) {
+    const colorEmoji = AccountColorLabels[account.color as keyof typeof AccountColorLabels]?.split(' ')[0] || '⚪';
+    super(`${colorEmoji} ${account.name}${account.isDefault ? ' ⭐' : ''}`, vscode.TreeItemCollapsibleState.Expanded);
+    
+    this.contextValue = 'account';
+    this.iconPath = new vscode.ThemeIcon('account');
+    this.tooltip = `Account: ${account.name}\nKlicken zum Bearbeiten`;
+  }
+}
+
 class ServerTreeItem extends vscode.TreeItem {
-  constructor(public readonly server: Server, public readonly providerId: string) {
+  constructor(public readonly server: HetznerServerWithAccount) {
     super(server.name, vscode.TreeItemCollapsibleState.None);
     
-    // Status-based icon coloring
     let iconColor: vscode.ThemeColor;
     let statusEmoji = '';
     
@@ -76,21 +100,24 @@ class ServerTreeItem extends vscode.TreeItem {
         statusEmoji = '🟠';
         break;
       default:
-        iconColor = new vscode.ThemeColor('charts.gray');
+        iconColor = new vscode.ThemeColor('disabledForeground');
         statusEmoji = '⚪';
     }
     
     this.iconPath = new vscode.ThemeIcon('server', iconColor);
     this.description = server.publicIp || 'Keine IP';
-    this.tooltip = `${statusEmoji} ${server.name}\nStatus: ${server.status}\nIP: ${server.publicIp || 'N/A'}`;
+    this.tooltip = `${statusEmoji} ${server.name}\nStatus: ${server.status}\nIP: ${server.publicIp || 'N/A'}\nAccount: ${server.accountName}`;
     
-    if (server.id === '__no_token__') {
-      this.contextValue = 'noToken';
+    if (server.id.startsWith('__no_account')) {
+      this.contextValue = 'noAccount';
       this.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor('charts.yellow'));
       this.command = {
-        command: 'devops.setHetznerToken',
-        title: 'Token setzen'
+        command: 'devops.addAccount',
+        title: 'Account hinzufügen'
       };
+    } else if (server.id.startsWith('__error')) {
+      this.contextValue = 'error';
+      this.iconPath = new vscode.ThemeIcon('error', new vscode.ThemeColor('charts.red'));
     } else {
       this.contextValue = 'server';
     }
@@ -98,6 +125,27 @@ class ServerTreeItem extends vscode.TreeItem {
   
   get publicIp(): string | undefined {
     return this.server.publicIp;
+  }
+
+  get providerId(): string { return 'hetzner-cloud'; }
+  get accountId(): string { return this.server.accountId; }
+}
+
+class AddAccountItem extends vscode.TreeItem {
+  constructor(provider: string) {
+    super('Account hinzufügen...', vscode.TreeItemCollapsibleState.None);
+    this.iconPath = new vscode.ThemeIcon('add');
+    this.command = {
+      command: 'devops.addAccount',
+      title: 'Account hinzufügen'
+    };
+  }
+}
+
+class EmptyItem extends vscode.TreeItem {
+  constructor(message: string) {
+    super(message, vscode.TreeItemCollapsibleState.None);
+    this.iconPath = new vscode.ThemeIcon('info');
   }
 }
 
@@ -109,5 +157,4 @@ class ErrorTreeItem extends vscode.TreeItem {
   }
 }
 
-// Export for use in commands
 export { ServerTreeItem };

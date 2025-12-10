@@ -4,7 +4,7 @@ import { isDnsProvider, isComputeProvider } from '../util/guards';
 import { ReadOnlyError, UserError, AuthError } from '../util/errors';
 import { logInfo, logError, showChannel } from '../util/logging';
 import { checkDnsPropagation, formatPropagationResults } from '../util/propagation';
-import { RecordTreeItem, DomainTreeItem } from '../views/domainsTreeDataProvider';
+import { RecordTreeItem } from '../views/domainsTreeDataProvider';
 import { ServerTreeItem } from '../views/computeTreeDataProvider';
 import { IonosDnsProvider } from '../providers/ionosDnsProvider';
 import { HetznerCloudProvider } from '../providers/hetznerCloudProvider';
@@ -30,7 +30,6 @@ async function showError(err: unknown): Promise<void> {
         ) : await vscode.window.showErrorMessage(err.message);
         
         if (action === err.suggestion && err instanceof AuthError) {
-            // Suggest setting token
             showChannel();
         }
     } else if (err instanceof Error) {
@@ -55,68 +54,9 @@ export function registerBridgeCommands(
     pm: ProviderManager,
     ionosProvider: IonosDnsProvider,
     hetznerProvider: HetznerCloudProvider,
-    updateTokenContext: () => Promise<void>
+    onAccountsChanged: () => void
 ) {
     context.subscriptions.push(
-        // =============================================
-        // TOKEN MANAGEMENT
-        // =============================================
-        vscode.commands.registerCommand('devops.setIonosToken', async () => {
-            const token = await vscode.window.showInputBox({
-                placeHolder: 'IONOS DNS API Key (public_prefix.secret)',
-                prompt: 'Geben Sie Ihren IONOS DNS API Token ein',
-                password: true,
-                ignoreFocusOut: true
-            });
-            
-            if (token) {
-                await context.secrets.store('ionos.dns.token', token);
-                ionosProvider.invalidateCache();
-                await updateTokenContext();
-                vscode.window.showInformationMessage('✅ IONOS DNS Token gespeichert.');
-                vscode.commands.executeCommand('devops.refreshAll');
-            }
-        }),
-
-        vscode.commands.registerCommand('devops.setHetznerToken', async () => {
-            const token = await vscode.window.showInputBox({
-                placeHolder: 'Hetzner Cloud API Token',
-                prompt: 'Geben Sie Ihren Hetzner Cloud API Token ein',
-                password: true,
-                ignoreFocusOut: true
-            });
-
-            if (token) {
-                await context.secrets.store('hetzner.cloud.token', token);
-                hetznerProvider.invalidateCache();
-                await updateTokenContext();
-                vscode.window.showInformationMessage('✅ Hetzner Cloud Token gespeichert.');
-                vscode.commands.executeCommand('devops.refreshAll');
-            }
-        }),
-
-        vscode.commands.registerCommand('devops.clearIonosToken', async () => {
-            const confirmed = await confirmAction('IONOS Token wirklich löschen?');
-            if (confirmed) {
-                await context.secrets.delete('ionos.dns.token');
-                ionosProvider.invalidateCache();
-                await updateTokenContext();
-                vscode.window.showInformationMessage('IONOS Token gelöscht.');
-                vscode.commands.executeCommand('devops.refreshAll');
-            }
-        }),
-
-        vscode.commands.registerCommand('devops.clearHetznerToken', async () => {
-            const confirmed = await confirmAction('Hetzner Token wirklich löschen?');
-            if (confirmed) {
-                await context.secrets.delete('hetzner.cloud.token');
-                hetznerProvider.invalidateCache();
-                await updateTokenContext();
-                vscode.window.showInformationMessage('Hetzner Token gelöscht.');
-                vscode.commands.executeCommand('devops.refreshAll');
-            }
-        }),
-
         // =============================================
         // DNS OPERATIONS
         // =============================================
@@ -144,14 +84,9 @@ export function registerBridgeCommands(
                 );
                 if (!confirmed) return;
 
-                const provider = pm.getProviderById(node.providerId);
-                if (!isDnsProvider(provider)) {
-                    throw new Error('Provider nicht gefunden.');
-                }
-
-                await provider.updateRecord(node.domainId, node.record.id, clipboardIp);
+                await ionosProvider.updateRecord(node.domainId, node.record.id, clipboardIp, undefined, node.accountId);
                 vscode.window.showInformationMessage(`✅ ${node.record.name}.${node.domainName} → ${clipboardIp}`);
-                vscode.commands.executeCommand('devops.refreshAll');
+                onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'updateRecordFromClipboard failed', err);
                 await showError(err);
@@ -170,14 +105,9 @@ export function registerBridgeCommands(
 
                 if (!newValue || newValue === node.record.value) return;
 
-                const provider = pm.getProviderById(node.providerId);
-                if (!isDnsProvider(provider)) {
-                    throw new Error('Provider nicht gefunden.');
-                }
-
-                await provider.updateRecord(node.domainId, node.record.id, newValue);
+                await ionosProvider.updateRecord(node.domainId, node.record.id, newValue, undefined, node.accountId);
                 vscode.window.showInformationMessage(`✅ Record aktualisiert: ${newValue}`);
-                vscode.commands.executeCommand('devops.refreshAll');
+                onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'editRecord failed', err);
                 await showError(err);
@@ -185,11 +115,11 @@ export function registerBridgeCommands(
         }),
 
         vscode.commands.registerCommand('devops.setTtl60', async (node: RecordTreeItem) => {
-            await setRecordTtl(node, 60, pm);
+            await setRecordTtl(node, 60, ionosProvider, onAccountsChanged);
         }),
 
         vscode.commands.registerCommand('devops.setTtl3600', async (node: RecordTreeItem) => {
-            await setRecordTtl(node, 3600, pm);
+            await setRecordTtl(node, 3600, ionosProvider, onAccountsChanged);
         }),
 
         vscode.commands.registerCommand('devops.checkPropagation', async (node: RecordTreeItem) => {
@@ -229,11 +159,11 @@ export function registerBridgeCommands(
                     location: vscode.ProgressLocation.Notification,
                     title: `Starte ${node.server.name} neu...`
                 }, async () => {
-                    await hetznerProvider.rebootServer(node.server.id);
+                    await hetznerProvider.rebootServer(node.server.id, node.accountId);
                 });
 
                 vscode.window.showInformationMessage(`✅ ${node.server.name} wird neu gestartet.`);
-                vscode.commands.executeCommand('devops.refreshAll');
+                onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'serverReboot failed', err);
                 await showError(err);
@@ -253,11 +183,11 @@ export function registerBridgeCommands(
                     location: vscode.ProgressLocation.Notification,
                     title: `Fahre ${node.server.name} herunter...`
                 }, async () => {
-                    await hetznerProvider.powerOffServer(node.server.id);
+                    await hetznerProvider.powerOffServer(node.server.id, node.accountId);
                 });
 
                 vscode.window.showInformationMessage(`✅ ${node.server.name} wurde heruntergefahren.`);
-                vscode.commands.executeCommand('devops.refreshAll');
+                onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'serverPowerOff failed', err);
                 await showError(err);
@@ -272,11 +202,11 @@ export function registerBridgeCommands(
                     location: vscode.ProgressLocation.Notification,
                     title: `Starte ${node.server.name}...`
                 }, async () => {
-                    await hetznerProvider.powerOnServer(node.server.id);
+                    await hetznerProvider.powerOnServer(node.server.id, node.accountId);
                 });
 
                 vscode.window.showInformationMessage(`✅ ${node.server.name} wird gestartet.`);
-                vscode.commands.executeCommand('devops.refreshAll');
+                onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'serverPowerOn failed', err);
                 await showError(err);
@@ -292,9 +222,9 @@ export function registerBridgeCommands(
                 );
                 if (!confirmed) return;
 
-                await hetznerProvider.resetServer(node.server.id);
+                await hetznerProvider.resetServer(node.server.id, node.accountId);
                 vscode.window.showInformationMessage(`✅ ${node.server.name} wurde zurückgesetzt.`);
-                vscode.commands.executeCommand('devops.refreshAll');
+                onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'serverReset failed', err);
                 await showError(err);
@@ -314,7 +244,7 @@ export function registerBridgeCommands(
                     location: vscode.ProgressLocation.Notification,
                     title: `Aktiviere Rescue Mode für ${node.server.name}...`
                 }, async () => {
-                    return await hetznerProvider.enableRescueMode(node.server.id);
+                    return await hetznerProvider.enableRescueMode(node.server.id, node.accountId);
                 });
 
                 if (result.rootPassword) {
@@ -323,11 +253,10 @@ export function registerBridgeCommands(
                         `✅ Rescue Mode aktiviert!\n\nRoot-Passwort wurde in die Zwischenablage kopiert: ${result.rootPassword}\n\nServer wird jetzt neu gestartet.`,
                         { modal: true }
                     );
-                    // Also reboot to actually enter rescue mode
-                    await hetznerProvider.rebootServer(node.server.id);
+                    await hetznerProvider.rebootServer(node.server.id, node.accountId);
                 }
                 
-                vscode.commands.executeCommand('devops.refreshAll');
+                onAccountsChanged();
             } catch (err) {
                 logError(TAG, 'serverRescue failed', err);
                 await showError(err);
@@ -343,7 +272,6 @@ export function registerBridgeCommands(
                     placeHolder: `Snapshot-${new Date().toISOString().slice(0, 10)}`
                 });
 
-                // User cancelled
                 if (snapshotName === undefined) return;
 
                 const confirmed = await confirmAction(
@@ -356,7 +284,7 @@ export function registerBridgeCommands(
                     title: `Erstelle Snapshot für ${node.server.name}...`,
                     cancellable: false
                 }, async () => {
-                    await hetznerProvider.createSnapshot(node.server.id, snapshotName || undefined);
+                    await hetznerProvider.createSnapshot(node.server.id, snapshotName || undefined, node.accountId);
                 });
 
                 vscode.window.showInformationMessage(`✅ Snapshot für ${node.server.name} wird erstellt.`);
@@ -382,7 +310,6 @@ export function registerBridgeCommands(
         }),
 
         vscode.commands.registerCommand('devops.serverConsole', async (node: ServerTreeItem) => {
-            // Open Hetzner Cloud Console in browser
             const consoleUrl = `https://console.hetzner.cloud/servers/${node.server.id}/overview`;
             vscode.env.openExternal(vscode.Uri.parse(consoleUrl));
             logInfo(TAG, `Opened Hetzner Console for ${node.server.name}`);
@@ -393,22 +320,39 @@ export function registerBridgeCommands(
         // =============================================
         vscode.commands.registerCommand('devops.showLogs', () => {
             showChannel();
+        }),
+
+        // Legacy commands (redirect to new account system)
+        vscode.commands.registerCommand('devops.setIonosToken', () => {
+            vscode.commands.executeCommand('devops.addAccount');
+        }),
+
+        vscode.commands.registerCommand('devops.setHetznerToken', () => {
+            vscode.commands.executeCommand('devops.addAccount');
+        }),
+
+        vscode.commands.registerCommand('devops.clearIonosToken', () => {
+            vscode.commands.executeCommand('devops.deleteAccount');
+        }),
+
+        vscode.commands.registerCommand('devops.clearHetznerToken', () => {
+            vscode.commands.executeCommand('devops.deleteAccount');
         })
     );
 }
 
-async function setRecordTtl(node: RecordTreeItem, ttl: number, pm: ProviderManager): Promise<void> {
+async function setRecordTtl(
+    node: RecordTreeItem, 
+    ttl: number, 
+    ionosProvider: IonosDnsProvider,
+    onAccountsChanged: () => void
+): Promise<void> {
     try {
         checkWritePermission();
 
-        const provider = pm.getProviderById(node.providerId) as IonosDnsProvider | undefined;
-        if (!provider || !('setRecordTtl' in provider)) {
-            throw new Error('Provider unterstützt TTL-Änderung nicht.');
-        }
-
-        await provider.setRecordTtl(node.domainId, node.record.id, ttl);
+        await ionosProvider.setRecordTtl(node.domainId, node.record.id, ttl, node.accountId);
         vscode.window.showInformationMessage(`✅ TTL auf ${ttl}s gesetzt.`);
-        vscode.commands.executeCommand('devops.refreshAll');
+        onAccountsChanged();
     } catch (err) {
         logError(TAG, `setTtl${ttl} failed`, err);
         await showError(err);

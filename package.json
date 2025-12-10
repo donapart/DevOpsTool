@@ -2,7 +2,7 @@
   "name": "devops-hybrid",
   "displayName": "DevOps Hybrid Cockpit",
   "description": "Hybrid Cloud Management for IONOS and Hetzner within VS Code. Manage DNS records and Cloud servers without leaving your editor.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "donapart",
   "repository": {
     "type": "git",
@@ -65,26 +65,50 @@
         "category": "DevOps"
       },
       {
+        "command": "devops.addAccount",
+        "title": "Account hinzufügen",
+        "icon": "$(add)",
+        "category": "DevOps Accounts"
+      },
+      {
+        "command": "devops.editAccount",
+        "title": "Account bearbeiten",
+        "icon": "$(edit)",
+        "category": "DevOps Accounts"
+      },
+      {
+        "command": "devops.deleteAccount",
+        "title": "Account löschen",
+        "icon": "$(trash)",
+        "category": "DevOps Accounts"
+      },
+      {
+        "command": "devops.listAccounts",
+        "title": "Accounts verwalten",
+        "icon": "$(account)",
+        "category": "DevOps Accounts"
+      },
+      {
         "command": "devops.setIonosToken",
-        "title": "Set IONOS DNS Token",
+        "title": "Add IONOS Account (Legacy)",
         "icon": "$(key)",
         "category": "DevOps Setup"
       },
       {
         "command": "devops.setHetznerToken",
-        "title": "Set Hetzner Cloud Token",
+        "title": "Add Hetzner Account (Legacy)",
         "icon": "$(key)",
         "category": "DevOps Setup"
       },
       {
         "command": "devops.clearIonosToken",
-        "title": "Clear IONOS Token",
+        "title": "Delete Account (Legacy)",
         "icon": "$(trash)",
         "category": "DevOps Setup"
       },
       {
         "command": "devops.clearHetznerToken",
-        "title": "Clear Hetzner Token",
+        "title": "Delete Account (Legacy)",
         "icon": "$(trash)",
         "category": "DevOps Setup"
       },
@@ -176,14 +200,14 @@
     "menus": {
       "view/title": [
         {
-          "command": "devops.setIonosToken",
-          "when": "view == devopsDomainsView",
+          "command": "devops.addAccount",
+          "when": "view == devopsDomainsView || view == devopsComputeView",
           "group": "navigation@1"
         },
         {
-          "command": "devops.setHetznerToken",
-          "when": "view == devopsComputeView",
-          "group": "navigation@1"
+          "command": "devops.listAccounts",
+          "when": "view == devopsDomainsView || view == devopsComputeView",
+          "group": "navigation@2"
         },
         {
           "command": "devops.refreshAll",
@@ -197,6 +221,16 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "devops.editAccount",
+          "when": "viewItem == account",
+          "group": "account@1"
+        },
+        {
+          "command": "devops.deleteAccount",
+          "when": "viewItem == account",
+          "group": "account@2"
+        },
         {
           "command": "devops.copyServerIp",
           "when": "view == devopsComputeView && viewItem == server",
@@ -277,12 +311,12 @@
     "viewsWelcome": [
       {
         "view": "devopsDomainsView",
-        "contents": "Willkommen beim DevOps Hybrid Cockpit!\n\nUm Ihre IONOS Domains zu sehen, konfigurieren Sie bitte Ihren API Token.\n[IONOS Token eingeben](command:devops.setIonosToken)\n\nSie finden Ihren Token in der [IONOS Developer Console](https://developer.hosting.ionos.de/).",
+        "contents": "Willkommen beim DevOps Hybrid Cockpit!\n\nUm Ihre Domains zu sehen, fügen Sie einen Account hinzu.\n[Account hinzufügen](command:devops.addAccount)\n\nSie können mehrere Accounts mit verschiedenen Farben zur Unterscheidung anlegen.",
         "when": "!devops.ionosConfigured"
       },
       {
         "view": "devopsComputeView",
-        "contents": "Willkommen beim DevOps Hybrid Cockpit!\n\nUm Ihre Hetzner Server zu sehen, konfigurieren Sie bitte Ihren API Token.\n[Hetzner Token eingeben](command:devops.setHetznerToken)\n\nSie finden Ihren Token in der [Hetzner Cloud Console](https://console.hetzner.cloud/) unter Security → API Tokens.",
+        "contents": "Willkommen beim DevOps Hybrid Cockpit!\n\nUm Ihre Server zu sehen, fügen Sie einen Account hinzu.\n[Account hinzufügen](command:devops.addAccount)\n\nSie können mehrere Accounts mit verschiedenen Farben zur Unterscheidung anlegen.",
         "when": "!devops.hetznerConfigured"
       }
     ],
