@@ -213,9 +213,28 @@ export function registerProjectCommands(
         // =============================================
         // RESOURCE METADATA (Assign Project/Tags to Domain/Server)
         // =============================================
-        vscode.commands.registerCommand('devops.assignProject', async (resourceInfo?: { providerId: string; resourceId: string; name: string }) => {
+        vscode.commands.registerCommand('devops.assignProject', async (resourceInfo?: { providerId: string; resourceId: string; name: string } | any) => {
             try {
-                if (!resourceInfo) {
+                // Support both object and tree item
+                let providerId: string | undefined;
+                let resourceId: string | undefined;
+                let name: string | undefined;
+
+                if (resourceInfo) {
+                    if (resourceInfo.providerId && resourceInfo.resourceId) {
+                        // Direct object
+                        providerId = resourceInfo.providerId;
+                        resourceId = resourceInfo.resourceId;
+                        name = resourceInfo.name || resourceInfo.resourceName || 'Resource';
+                    } else if (resourceInfo.providerId || resourceInfo.resourceId) {
+                        // Tree item with getters
+                        providerId = resourceInfo.providerId || 'ionos-dns';
+                        resourceId = resourceInfo.resourceId || resourceInfo.domain?.id || resourceInfo.server?.id;
+                        name = resourceInfo.resourceName || resourceInfo.domain?.name || resourceInfo.server?.name || 'Resource';
+                    }
+                }
+
+                if (!providerId || !resourceId) {
                     vscode.window.showWarningMessage('Bitte auf eine Domain oder einen Server klicken.');
                     return;
                 }
@@ -231,7 +250,7 @@ export function registerProjectCommands(
                 ];
 
                 const selected = await vscode.window.showQuickPick(options, {
-                    placeHolder: `Projekt für "${resourceInfo.name}" zuweisen`
+                    placeHolder: `Projekt für "${name}" zuweisen`
                 });
 
                 if (!selected) return;
@@ -242,7 +261,7 @@ export function registerProjectCommands(
                 }
 
                 const projectId = selected.detail === '__none__' ? undefined : selected.detail;
-                await projectManager.setResourceProject(resourceInfo.providerId, resourceInfo.resourceId, projectId!);
+                await projectManager.setResourceProject(providerId, resourceId, projectId!);
 
                 vscode.window.showInformationMessage(
                     projectId 
@@ -256,18 +275,34 @@ export function registerProjectCommands(
             }
         }),
 
-        vscode.commands.registerCommand('devops.editTags', async (resourceInfo?: { providerId: string; resourceId: string; name: string }) => {
+        vscode.commands.registerCommand('devops.editTags', async (resourceInfo?: { providerId: string; resourceId: string; name: string } | any) => {
             try {
-                if (!resourceInfo) {
+                let providerId: string | undefined;
+                let resourceId: string | undefined;
+                let name: string | undefined;
+
+                if (resourceInfo) {
+                    if (resourceInfo.providerId && resourceInfo.resourceId) {
+                        providerId = resourceInfo.providerId;
+                        resourceId = resourceInfo.resourceId;
+                        name = resourceInfo.name || resourceInfo.resourceName || 'Resource';
+                    } else {
+                        providerId = resourceInfo.providerId || 'ionos-dns';
+                        resourceId = resourceInfo.resourceId || resourceInfo.domain?.id || resourceInfo.server?.id;
+                        name = resourceInfo.resourceName || resourceInfo.domain?.name || resourceInfo.server?.name || 'Resource';
+                    }
+                }
+
+                if (!providerId || !resourceId) {
                     vscode.window.showWarningMessage('Bitte auf eine Domain oder einen Server klicken.');
                     return;
                 }
 
-                const metadata = projectManager.getResourceMetadata(resourceInfo.providerId, resourceInfo.resourceId);
+                const metadata = projectManager.getResourceMetadata(providerId, resourceId);
                 const currentTags = metadata.tags.join(', ');
 
                 const newTagsInput = await vscode.window.showInputBox({
-                    prompt: `Tags für "${resourceInfo.name}" (kommagetrennt)`,
+                    prompt: `Tags für "${name}" (kommagetrennt)`,
                     value: currentTags,
                     placeHolder: 'z.B. prod, customer-x, critical'
                 });
@@ -275,7 +310,7 @@ export function registerProjectCommands(
                 if (newTagsInput === undefined) return;
 
                 const tags = newTagsInput.split(',').map(t => t.trim()).filter(t => t);
-                await projectManager.setResourceTags(resourceInfo.providerId, resourceInfo.resourceId, tags);
+                await projectManager.setResourceTags(providerId, resourceId, tags);
 
                 vscode.window.showInformationMessage(`✅ Tags aktualisiert!`);
                 onProjectsChanged();
@@ -285,9 +320,25 @@ export function registerProjectCommands(
             }
         }),
 
-        vscode.commands.registerCommand('devops.setResourceColor', async (resourceInfo?: { providerId: string; resourceId: string; name: string }) => {
+        vscode.commands.registerCommand('devops.setResourceColor', async (resourceInfo?: { providerId: string; resourceId: string; name: string } | any) => {
             try {
-                if (!resourceInfo) {
+                let providerId: string | undefined;
+                let resourceId: string | undefined;
+                let name: string | undefined;
+
+                if (resourceInfo) {
+                    if (resourceInfo.providerId && resourceInfo.resourceId) {
+                        providerId = resourceInfo.providerId;
+                        resourceId = resourceInfo.resourceId;
+                        name = resourceInfo.name || resourceInfo.resourceName || 'Resource';
+                    } else {
+                        providerId = resourceInfo.providerId || 'ionos-dns';
+                        resourceId = resourceInfo.resourceId || resourceInfo.domain?.id || resourceInfo.server?.id;
+                        name = resourceInfo.resourceName || resourceInfo.domain?.name || resourceInfo.server?.name || 'Resource';
+                    }
+                }
+
+                if (!providerId || !resourceId) {
                     vscode.window.showWarningMessage('Bitte auf eine Domain oder einen Server klicken.');
                     return;
                 }
@@ -300,13 +351,13 @@ export function registerProjectCommands(
                 ];
 
                 const selected = await vscode.window.showQuickPick(colorOptions, {
-                    placeHolder: `Farbe für "${resourceInfo.name}" wählen`
+                    placeHolder: `Farbe für "${name}" wählen`
                 });
 
                 if (!selected) return;
 
                 const color = selected.detail === '__default__' ? undefined : selected.detail as AccountColor;
-                await projectManager.setResourceColor(resourceInfo.providerId, resourceInfo.resourceId, color);
+                await projectManager.setResourceColor(providerId, resourceId, color);
 
                 vscode.window.showInformationMessage(`✅ Farbe gesetzt!`);
                 onProjectsChanged();
@@ -316,25 +367,41 @@ export function registerProjectCommands(
             }
         }),
 
-        vscode.commands.registerCommand('devops.addNote', async (resourceInfo?: { providerId: string; resourceId: string; name: string }) => {
+        vscode.commands.registerCommand('devops.addNote', async (resourceInfo?: { providerId: string; resourceId: string; name: string } | any) => {
             try {
-                if (!resourceInfo) {
+                let providerId: string | undefined;
+                let resourceId: string | undefined;
+                let name: string | undefined;
+
+                if (resourceInfo) {
+                    if (resourceInfo.providerId && resourceInfo.resourceId) {
+                        providerId = resourceInfo.providerId;
+                        resourceId = resourceInfo.resourceId;
+                        name = resourceInfo.name || resourceInfo.resourceName || 'Resource';
+                    } else {
+                        providerId = resourceInfo.providerId || 'ionos-dns';
+                        resourceId = resourceInfo.resourceId || resourceInfo.domain?.id || resourceInfo.server?.id;
+                        name = resourceInfo.resourceName || resourceInfo.domain?.name || resourceInfo.server?.name || 'Resource';
+                    }
+                }
+
+                if (!providerId || !resourceId) {
                     vscode.window.showWarningMessage('Bitte auf eine Domain oder einen Server klicken.');
                     return;
                 }
 
-                const metadata = projectManager.getResourceMetadata(resourceInfo.providerId, resourceInfo.resourceId);
+                const metadata = projectManager.getResourceMetadata(providerId, resourceId);
                 const currentNote = metadata.notes || '';
 
                 const newNote = await vscode.window.showInputBox({
-                    prompt: `Notiz für "${resourceInfo.name}"`,
+                    prompt: `Notiz für "${name}"`,
                     value: currentNote,
                     placeHolder: 'Optionale Notiz oder Beschreibung'
                 });
 
                 if (newNote === undefined) return;
 
-                await projectManager.setResourceNotes(resourceInfo.providerId, resourceInfo.resourceId, newNote || undefined);
+                await projectManager.setResourceNotes(providerId, resourceId, newNote || undefined);
                 vscode.window.showInformationMessage(`✅ Notiz gespeichert!`);
                 onProjectsChanged();
             } catch (err) {
