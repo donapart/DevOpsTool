@@ -14,7 +14,9 @@ export type AccountProviderType =
     | 'hetzner-robot'
     | 'cloudflare'
     | 'aws-route53'
-    | 'digitalocean';
+    | 'digitalocean'
+    | 'google-dns'
+    | 'google-compute';
 
 /**
  * Available colors for account identification.
@@ -67,7 +69,9 @@ export const ProviderLabels: Record<AccountProviderType, string> = {
     'hetzner-robot': 'Hetzner Robot (Dedicated)',
     'cloudflare': 'Cloudflare',
     'aws-route53': 'AWS Route 53',
-    'digitalocean': 'DigitalOcean'
+    'digitalocean': 'DigitalOcean',
+    'google-dns': 'Google Cloud DNS',
+    'google-compute': 'Google Compute Engine'
 };
 
 /**

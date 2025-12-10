@@ -30,8 +30,9 @@ export function registerAccountCommands(
                 const providerOptions: vscode.QuickPickItem[] = [
                     { label: '🌐 IONOS DNS', description: 'Domain & DNS Management', detail: 'ionos-dns' },
                     { label: '☁️ Hetzner Cloud', description: 'Cloud Server Management', detail: 'hetzner-cloud' },
-                    { label: '🔶 Cloudflare', description: 'DNS & CDN (coming soon)', detail: 'cloudflare' },
-                    { label: '🟠 AWS Route 53', description: 'Amazon DNS (coming soon)', detail: 'aws-route53' },
+                    { label: '🔶 Cloudflare', description: 'DNS & CDN', detail: 'cloudflare' },
+                    { label: '🔴 Google Cloud DNS', description: 'Google Cloud Platform DNS', detail: 'google-dns' },
+                    { label: '🟠 AWS Route 53', description: 'Amazon Web Services DNS', detail: 'aws-route53' },
                     { label: '🔵 DigitalOcean', description: 'Cloud & DNS (coming soon)', detail: 'digitalocean' },
                 ];
 
@@ -45,7 +46,7 @@ export function registerAccountCommands(
                 const provider = selectedProvider.detail as AccountProviderType;
 
                 // Check if provider is available
-                if (!['ionos-dns', 'hetzner-cloud'].includes(provider)) {
+                if (!['ionos-dns', 'hetzner-cloud', 'cloudflare', 'google-dns', 'aws-route53'].includes(provider)) {
                     vscode.window.showInformationMessage(`${selectedProvider.label} wird bald verfügbar sein!`);
                     return;
                 }
@@ -85,7 +86,10 @@ export function registerAccountCommands(
                 // Step 4: Enter Token
                 const tokenPrompts: Record<string, string> = {
                     'ionos-dns': 'IONOS API Key (Format: public.secret)',
-                    'hetzner-cloud': 'Hetzner Cloud API Token'
+                    'hetzner-cloud': 'Hetzner Cloud API Token',
+                    'cloudflare': 'Cloudflare API Token',
+                    'google-dns': 'Google Service Account JSON Key (komplett einfügen)',
+                    'aws-route53': 'AWS Access Key ID:Secret Access Key (mit Doppelpunkt getrennt)'
                 };
 
                 const token = await vscode.window.showInputBox({

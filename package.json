@@ -2,7 +2,7 @@
   "name": "devops-hybrid",
   "displayName": "DevOps Hybrid Cockpit",
   "description": "Hybrid Cloud Management for IONOS and Hetzner within VS Code. Manage DNS records and Cloud servers without leaving your editor.",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "publisher": "donapart",
   "repository": {
     "type": "git",
@@ -65,6 +65,24 @@
         "category": "DevOps"
       },
       {
+        "command": "devops.showMindmap",
+        "title": "Show DevOps Map",
+        "icon": "$(graph)",
+        "category": "DevOps"
+      },
+      {
+        "command": "devops.showStatus",
+        "title": "Show Status Report",
+        "icon": "$(dashboard)",
+        "category": "DevOps"
+      },
+      {
+        "command": "devops.exportStatus",
+        "title": "Export Status as Markdown",
+        "icon": "$(file-code)",
+        "category": "DevOps"
+      },
+      {
         "command": "devops.addAccount",
         "title": "Account hinzufügen",
         "icon": "$(add)",
@@ -87,6 +105,48 @@
         "title": "Accounts verwalten",
         "icon": "$(account)",
         "category": "DevOps Accounts"
+      },
+      {
+        "command": "devops.createProject",
+        "title": "Projekt erstellen",
+        "icon": "$(add)",
+        "category": "DevOps Projects"
+      },
+      {
+        "command": "devops.editProject",
+        "title": "Projekt bearbeiten",
+        "icon": "$(edit)",
+        "category": "DevOps Projects"
+      },
+      {
+        "command": "devops.deleteProject",
+        "title": "Projekt löschen",
+        "icon": "$(trash)",
+        "category": "DevOps Projects"
+      },
+      {
+        "command": "devops.assignProject",
+        "title": "Projekt zuweisen",
+        "icon": "$(link)",
+        "category": "DevOps Projects"
+      },
+      {
+        "command": "devops.editTags",
+        "title": "Tags bearbeiten",
+        "icon": "$(tag)",
+        "category": "DevOps Projects"
+      },
+      {
+        "command": "devops.setResourceColor",
+        "title": "Farbe setzen",
+        "icon": "$(paintcan)",
+        "category": "DevOps Projects"
+      },
+      {
+        "command": "devops.addNote",
+        "title": "Notiz hinzufügen",
+        "icon": "$(note)",
+        "category": "DevOps Projects"
       },
       {
         "command": "devops.setIonosToken",
@@ -218,6 +278,16 @@
           "command": "devops.showLogs",
           "when": "view == devopsDomainsView || view == devopsComputeView",
           "group": "navigation@3"
+        },
+        {
+          "command": "devops.showStatus",
+          "when": "view == devopsDomainsView || view == devopsComputeView",
+          "group": "navigation@4"
+        },
+        {
+          "command": "devops.showMindmap",
+          "when": "view == devopsDomainsView || view == devopsComputeView",
+          "group": "navigation@5"
         }
       ],
       "view/item/context": [
@@ -305,6 +375,46 @@
           "command": "devops.checkPropagation",
           "when": "view == devopsDomainsView && viewItem == record",
           "group": "3_tools@1"
+        },
+        {
+          "command": "devops.assignProject",
+          "when": "view == devopsDomainsView && viewItem == domain",
+          "group": "4_project@1"
+        },
+        {
+          "command": "devops.editTags",
+          "when": "view == devopsDomainsView && viewItem == domain",
+          "group": "4_project@2"
+        },
+        {
+          "command": "devops.setResourceColor",
+          "when": "view == devopsDomainsView && viewItem == domain",
+          "group": "4_project@3"
+        },
+        {
+          "command": "devops.addNote",
+          "when": "view == devopsDomainsView && viewItem == domain",
+          "group": "4_project@4"
+        },
+        {
+          "command": "devops.assignProject",
+          "when": "view == devopsComputeView && viewItem == server",
+          "group": "4_project@1"
+        },
+        {
+          "command": "devops.editTags",
+          "when": "view == devopsComputeView && viewItem == server",
+          "group": "4_project@2"
+        },
+        {
+          "command": "devops.setResourceColor",
+          "when": "view == devopsComputeView && viewItem == server",
+          "group": "4_project@3"
+        },
+        {
+          "command": "devops.addNote",
+          "when": "view == devopsComputeView && viewItem == server",
+          "group": "4_project@4"
         }
       ]
     },

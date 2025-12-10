@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Map</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--vscode-font-family);
+            background: var(--vscode-editor-background);
+            color: var(--vscode-editor-foreground);
+            overflow: hidden;
+        }
+        #map-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: var(--vscode-editor-background);
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        button {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            padding: 6px 12px;
+            margin: 2px;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+        .node {
+            position: absolute;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .node:hover {
+            transform: scale(1.1);
+            z-index: 100;
+        }
+        .node-account { background: var(--vscode-badge-background); }
+        .node-project { background: var(--vscode-textBlockQuote-background); }
+        .node-domain { background: var(--vscode-textCodeBlock-background); }
+        .node-server { background: var(--vscode-inputValidation-infoBackground); }
+        .node-record { background: var(--vscode-editor-inactiveSelectionBackground); }
+        .connection {
+            position: absolute;
+            pointer-events: none;
+            stroke: var(--vscode-textLink-foreground);
+            stroke-width: 2;
+        }
+        .legend {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: var(--vscode-editor-background);
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-size: 11px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 4px 0;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map-container">
+        <div id="controls">
+            <button onclick="resetView()">Reset View</button>
+            <button onclick="toggleLayout()">Toggle Layout</button>
+            <button onclick="exportData()">Export JSON</button>
+        </div>
+        <div id="legend" class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--vscode-badge-background);"></div>
+                <span>Account</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--vscode-textBlockQuote-background);"></div>
+                <span>Projekt</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--vscode-textCodeBlock-background);"></div>
+                <span>Domain</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--vscode-inputValidation-infoBackground);"></div>
+                <span>Server</span>
+            </div>
+        </div>
+    </div>
+    <script>
+        const vscode = acquireVsCodeApi();
+        let graphData = null;
+        let layoutMode = 'hierarchical'; // 'hierarchical' or 'force'
+
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.command) {
+                case 'updateGraph':
+                    graphData = message.data;
+                    renderGraph();
+                    break;
+            }
+        });
+
+        function renderGraph() {
+            if (!graphData) return;
+
+            const container = document.getElementById('map-container');
+            container.innerHTML = `
+                <div id="controls">
+                    <button onclick="resetView()">Reset View</button>
+                    <button onclick="toggleLayout()">Toggle Layout</button>
+                    <button onclick="exportData()">Export JSON</button>
+                </div>
+                <div id="legend" class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--vscode-badge-background);"></div>
+                        <span>Account</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--vscode-textBlockQuote-background);"></div>
+                        <span>Projekt</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--vscode-textCodeBlock-background);"></div>
+                        <span>Domain</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--vscode-inputValidation-infoBackground);"></div>
+                        <span>Server</span>
+                    </div>
+                </div>
+            `;
+
+            const nodes = [];
+            const connections = [];
+            let yPos = 50;
+            const xSpacing = 200;
+            const ySpacing = 100;
+
+            // Render accounts
+            graphData.accounts.forEach((account, accIdx) => {
+                const x = 50;
+                const y = yPos;
+                nodes.push({
+                    id: account.id,
+                    type: 'account',
+                    label: account.name,
+                    x, y
+                });
+                yPos += ySpacing;
+
+                // Render projects for this account
+                const accountProjects = graphData.projects.filter(p => 
+                    graphData.resources.some(r => r.accountId === account.id && r.projectId === p.id)
+                );
+                accountProjects.forEach((project, projIdx) => {
+                    const px = x + xSpacing;
+                    const py = y + (projIdx * 60);
+                    nodes.push({
+                        id: project.id,
+                        type: 'project',
+                        label: project.name,
+                        x: px, y: py
+                    });
+                    connections.push({ from: account.id, to: project.id });
+                });
+
+                // Render domains
+                const accountDomains = graphData.domains.filter(d => d.accountId === account.id);
+                accountDomains.forEach((domain, domIdx) => {
+                    const dx = x + xSpacing * 2;
+                    const dy = y + (domIdx * 50);
+                    nodes.push({
+                        id: domain.id,
+                        type: 'domain',
+                        label: domain.name,
+                        x: dx, y: dy
+                    });
+                    connections.push({ from: account.id, to: domain.id });
+
+                    // Link to project if assigned
+                    const domainResource = graphData.resources.find(r => r.id === domain.id && r.providerId === domain.providerId);
+                    if (domainResource?.projectId) {
+                        connections.push({ from: domainResource.projectId, to: domain.id });
+                    }
+
+                    // Render records
+                    domain.records.forEach((record, recIdx) => {
+                        const rx = dx + xSpacing;
+                        const ry = dy + (recIdx * 30);
+                        nodes.push({
+                            id: `${domain.id}-${record.id}`,
+                            type: 'record',
+                            label: `${record.type} ${record.name}`,
+                            x: rx, y: ry
+                        });
+                        connections.push({ from: domain.id, to: `${domain.id}-${record.id}` });
+                    });
+                });
+
+                // Render servers
+                const accountServers = graphData.servers.filter(s => s.accountId === account.id);
+                accountServers.forEach((server, srvIdx) => {
+                    const sx = x + xSpacing * 2;
+                    const sy = y + (srvIdx * 50) + 200;
+                    nodes.push({
+                        id: server.id,
+                        type: 'server',
+                        label: server.name,
+                        x: sx, y: sy
+                    });
+                    connections.push({ from: account.id, to: server.id });
+
+                    // Link to project if assigned
+                    const serverResource = graphData.resources.find(r => r.id === server.id && r.providerId === server.providerId);
+                    if (serverResource?.projectId) {
+                        connections.push({ from: serverResource.projectId, to: server.id });
+                    }
+
+                    // Link domain records to servers (if IP matches)
+                    graphData.domains.forEach(domain => {
+                        domain.records.forEach(record => {
+                            if ((record.type === 'A' || record.type === 'AAAA') && record.value === server.publicIp) {
+                                connections.push({ from: `${domain.id}-${record.id}`, to: server.id });
+                            }
+                        });
+                    });
+                });
+            });
+
+            // Render nodes
+            nodes.forEach(node => {
+                const nodeEl = document.createElement('div');
+                nodeEl.className = `node node-${node.type}`;
+                nodeEl.textContent = node.label;
+                nodeEl.style.left = node.x + 'px';
+                nodeEl.style.top = node.y + 'px';
+                nodeEl.onclick = () => {
+                    vscode.postMessage({
+                        command: 'nodeClick',
+                        nodeId: node.id,
+                        nodeType: node.type
+                    });
+                };
+                container.appendChild(nodeEl);
+            });
+
+            // Render connections
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.style.position = 'absolute';
+            svg.style.width = '100%';
+            svg.style.height = '100%';
+            svg.style.pointerEvents = 'none';
+            svg.style.zIndex = '0';
+            container.appendChild(svg);
+
+            connections.forEach(conn => {
+                const fromNode = nodes.find(n => n.id === conn.from);
+                const toNode = nodes.find(n => n.id === conn.to);
+                if (!fromNode || !toNode) return;
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', fromNode.x + 50);
+                line.setAttribute('y1', fromNode.y + 20);
+                line.setAttribute('x2', toNode.x + 50);
+                line.setAttribute('y2', toNode.y + 20);
+                line.setAttribute('stroke', 'var(--vscode-textLink-foreground)');
+                line.setAttribute('stroke-width', '2');
+                svg.appendChild(line);
+            });
+        }
+
+        function resetView() {
+            renderGraph();
+        }
+
+        function toggleLayout() {
+            layoutMode = layoutMode === 'hierarchical' ? 'force' : 'hierarchical';
+            renderGraph();
+        }
+
+        function exportData() {
+            if (graphData) {
+                const json = JSON.stringify(graphData, null, 2);
+                vscode.postMessage({
+                    command: 'exportData',
+                    data: json
+                });
+            }
+        }
+
+        // Request initial data
+        vscode.postMessage({ command: 'requestData' });
+    </script>
+</body>
+</html>
+

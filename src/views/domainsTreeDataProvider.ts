@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ProviderManager } from '../core/providerManager';
 import { AccountManager, AccountColorLabels } from '../core/accounts';
+import { ProjectManager } from '../core/projects';
 import { DnsRecord } from '../core/providers';
 import { IonosDnsProvider, IonosDomainWithAccount } from '../providers/ionosDnsProvider';
 import { logError } from '../util/logging';
@@ -11,7 +12,8 @@ export class DomainsTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
   constructor(
     private pm: ProviderManager,
-    private accountManager: AccountManager
+    private accountManager: AccountManager,
+    private projectManager: ProjectManager
   ) {}
 
   refresh() {
@@ -51,7 +53,10 @@ export class DomainsTreeDataProvider implements vscode.TreeDataProvider<vscode.T
           return [new EmptyItem('Keine Domains gefunden')];
         }
 
-        return accountDomains.map(d => new DomainTreeItem(d));
+        return accountDomains.map(d => {
+          const displayInfo = this.projectManager.getResourceDisplayInfo('ionos-dns', d.id);
+          return new DomainTreeItem(d, displayInfo);
+        });
       }
 
       // Domain level: Show records
@@ -83,14 +88,25 @@ class AccountTreeItem extends vscode.TreeItem {
 }
 
 class DomainTreeItem extends vscode.TreeItem {
-  constructor(public readonly domain: IonosDomainWithAccount) {
-    super(domain.name, domain.records.length > 0 
+  constructor(
+    public readonly domain: IonosDomainWithAccount,
+    public readonly displayInfo: { project?: any; tags: string[]; color: string; notes?: string }
+  ) {
+    const projectLabel = displayInfo.project ? ` [${displayInfo.project.name}]` : '';
+    const tagsLabel = displayInfo.tags.length > 0 ? ` 🏷️ ${displayInfo.tags.join(', ')}` : '';
+    
+    super(`${domain.name}${projectLabel}${tagsLabel}`, domain.records.length > 0 
       ? vscode.TreeItemCollapsibleState.Collapsed 
       : vscode.TreeItemCollapsibleState.None);
     
     this.contextValue = domain.id.startsWith('__') ? 'noData' : 'domain';
-    this.iconPath = new vscode.ThemeIcon('globe');
+    
+    // Use project/resource color if available
+    const color = displayInfo.color || domain.accountColor;
+    this.iconPath = new vscode.ThemeIcon('globe', color ? new vscode.ThemeColor(color) : undefined);
+    
     this.description = `${domain.records.length} Records`;
+    this.tooltip = displayInfo.notes || undefined;
     
     if (domain.id.startsWith('__error')) {
       this.iconPath = new vscode.ThemeIcon('error', new vscode.ThemeColor('charts.red'));
@@ -98,6 +114,10 @@ class DomainTreeItem extends vscode.TreeItem {
       this.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor('charts.yellow'));
     }
   }
+
+  get providerId(): string { return 'ionos-dns'; }
+  get resourceId(): string { return this.domain.id; }
+  get resourceName(): string { return this.domain.name; }
 }
 
 class RecordTreeItem extends vscode.TreeItem {

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ProviderManager } from '../core/providerManager';
 import { AccountManager, AccountColorLabels } from '../core/accounts';
+import { ProjectManager } from '../core/projects';
 import { Server } from '../core/providers';
 import { HetznerCloudProvider, HetznerServerWithAccount } from '../providers/hetznerCloudProvider';
 import { logError } from '../util/logging';
@@ -11,7 +12,8 @@ export class ComputeTreeDataProvider implements vscode.TreeDataProvider<vscode.T
 
   constructor(
     private pm: ProviderManager,
-    private accountManager: AccountManager
+    private accountManager: AccountManager,
+    private projectManager: ProjectManager
   ) {}
 
   refresh() {
@@ -50,7 +52,10 @@ export class ComputeTreeDataProvider implements vscode.TreeDataProvider<vscode.T
           return [new EmptyItem('Keine Server gefunden')];
         }
 
-        return accountServers.map(s => new ServerTreeItem(s));
+        return accountServers.map(s => {
+          const displayInfo = this.projectManager.getResourceDisplayInfo('hetzner-cloud', s.id);
+          return new ServerTreeItem(s, displayInfo);
+        });
       }
 
       return [];
@@ -73,8 +78,14 @@ class AccountTreeItem extends vscode.TreeItem {
 }
 
 class ServerTreeItem extends vscode.TreeItem {
-  constructor(public readonly server: HetznerServerWithAccount) {
-    super(server.name, vscode.TreeItemCollapsibleState.None);
+  constructor(
+    public readonly server: HetznerServerWithAccount,
+    public readonly displayInfo: { project?: any; tags: string[]; color: string; notes?: string }
+  ) {
+    const projectLabel = displayInfo.project ? ` [${displayInfo.project.name}]` : '';
+    const tagsLabel = displayInfo.tags.length > 0 ? ` 🏷️ ${displayInfo.tags.join(', ')}` : '';
+    
+    super(`${server.name}${projectLabel}${tagsLabel}`, vscode.TreeItemCollapsibleState.None);
     
     let iconColor: vscode.ThemeColor;
     let statusEmoji = '';
@@ -104,9 +115,27 @@ class ServerTreeItem extends vscode.TreeItem {
         statusEmoji = '⚪';
     }
     
-    this.iconPath = new vscode.ThemeIcon('server', iconColor);
+    // Use project/resource color if available, otherwise status color
+    const finalColor = displayInfo.color ? new vscode.ThemeColor(displayInfo.color) : iconColor;
+    this.iconPath = new vscode.ThemeIcon('server', finalColor);
     this.description = server.publicIp || 'Keine IP';
-    this.tooltip = `${statusEmoji} ${server.name}\nStatus: ${server.status}\nIP: ${server.publicIp || 'N/A'}\nAccount: ${server.accountName}`;
+    
+    const tooltipParts = [
+      `${statusEmoji} ${server.name}`,
+      `Status: ${server.status}`,
+      `IP: ${server.publicIp || 'N/A'}`,
+      `Account: ${server.accountName}`
+    ];
+    if (displayInfo.project) {
+      tooltipParts.push(`Projekt: ${displayInfo.project.name}`);
+    }
+    if (displayInfo.tags.length > 0) {
+      tooltipParts.push(`Tags: ${displayInfo.tags.join(', ')}`);
+    }
+    if (displayInfo.notes) {
+      tooltipParts.push(`Notiz: ${displayInfo.notes}`);
+    }
+    this.tooltip = tooltipParts.join('\n');
     
     if (server.id.startsWith('__no_account')) {
       this.contextValue = 'noAccount';
@@ -129,6 +158,8 @@ class ServerTreeItem extends vscode.TreeItem {
 
   get providerId(): string { return 'hetzner-cloud'; }
   get accountId(): string { return this.server.accountId; }
+  get resourceId(): string { return this.server.id; }
+  get resourceName(): string { return this.server.name; }
 }
 
 class AddAccountItem extends vscode.TreeItem {
