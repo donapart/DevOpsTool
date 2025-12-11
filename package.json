@@ -88,6 +88,12 @@
         "category": "DevOps Accounts"
       },
       {
+        "command": "devops.openIonosDeveloperConsole",
+        "title": "IONOS Developer Console öffnen",
+        "icon": "$(link-external)",
+        "category": "DevOps Setup"
+      },
+      {
         "command": "devops.editAccount",
         "title": "Account bearbeiten",
         "icon": "$(edit)",
@@ -287,6 +293,11 @@
           "command": "devops.showMindmap",
           "when": "view == devopsDomainsView || view == devopsComputeView",
           "group": "navigation@5"
+        },
+        {
+          "command": "devops.openIonosDeveloperConsole",
+          "when": "view == devopsDomainsView",
+          "group": "navigation@6"
         }
       ],
       "view/item/context": [

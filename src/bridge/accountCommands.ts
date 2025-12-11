@@ -92,15 +92,37 @@ export function registerAccountCommands(
                     'aws-route53': 'AWS Access Key ID:Secret Access Key (mit Doppelpunkt getrennt)'
                 };
 
+                // For IONOS, offer to open developer console
+                if (provider === 'ionos-dns') {
+                    const openConsole = await vscode.window.showQuickPick([
+                        { label: '$(link-external) IONOS Developer Console öffnen', detail: 'open' },
+                        { label: '$(key) API Key direkt eingeben', detail: 'enter' }
+                    ], {
+                        placeHolder: 'Wie möchten Sie fortfahren?',
+                        title: 'Neuen Account hinzufügen (4/4)'
+                    });
+
+                    if (!openConsole) return;
+
+                    if (openConsole.detail === 'open') {
+                        await vscode.env.openExternal(vscode.Uri.parse('https://developer.hosting.ionos.de/keys'));
+                        vscode.window.showInformationMessage('IONOS Developer Console geöffnet. Erstellen Sie einen neuen API-Key und fügen Sie ihn dann hier ein.');
+                        logInfo(TAG, 'Opened IONOS Developer Console for API key creation');
+                    }
+                }
+
                 const token = await vscode.window.showInputBox({
                     prompt: tokenPrompts[provider] || 'API Token eingeben',
-                    placeHolder: 'Token hier einfügen...',
+                    placeHolder: provider === 'ionos-dns' ? 'public.secret hier einfügen...' : 'Token hier einfügen...',
                     title: 'Neuen Account hinzufügen (4/4)',
                     password: true,
                     ignoreFocusOut: true,
                     validateInput: (value) => {
                         if (!value || value.trim().length < 10) {
                             return 'Token scheint zu kurz zu sein';
+                        }
+                        if (provider === 'ionos-dns' && !value.includes('.')) {
+                            return 'IONOS API Key sollte Format "public.secret" haben';
                         }
                         return null;
                     }
@@ -225,6 +247,21 @@ export function registerAccountCommands(
             } catch (err) {
                 logError(TAG, 'Failed to edit account', err);
                 vscode.window.showErrorMessage(`Fehler: ${err}`);
+            }
+        }),
+
+        // =============================================
+        // OPEN IONOS DEVELOPER CONSOLE
+        // =============================================
+        vscode.commands.registerCommand('devops.openIonosDeveloperConsole', async () => {
+            try {
+                const url = 'https://developer.hosting.ionos.de/keys';
+                await vscode.env.openExternal(vscode.Uri.parse(url));
+                vscode.window.showInformationMessage('IONOS Developer Console geöffnet. Dort können Sie neue API-Keys erstellen.');
+                logInfo(TAG, 'Opened IONOS Developer Console');
+            } catch (err) {
+                logError(TAG, 'Failed to open IONOS Developer Console', err);
+                vscode.window.showErrorMessage(`Fehler beim Öffnen: ${err}`);
             }
         }),
 
