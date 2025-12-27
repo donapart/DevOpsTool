@@ -7,8 +7,10 @@ import { HetznerCloudProvider } from './providers/hetznerCloudProvider';
 import { CloudflareProvider } from './providers/cloudflareProvider';
 import { GoogleDnsProvider } from './providers/googleDnsProvider';
 import { AwsRoute53Provider } from './providers/awsRoute53Provider';
+import { GitHubProvider } from './providers/githubProvider';
 import { DomainsTreeDataProvider } from './views/domainsTreeDataProvider';
 import { ComputeTreeDataProvider } from './views/computeTreeDataProvider';
+import { GitHubTreeDataProvider, RepoTreeItem, WorkflowTreeItem } from './views/githubTreeDataProvider';
 import { MindmapWebviewProvider } from './views/mindmapWebview';
 import { registerBridgeCommands } from './bridge/commands';
 import { registerAccountCommands } from './bridge/accountCommands';
@@ -41,6 +43,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const cloudflareProvider = new CloudflareProvider(accountManager, context.secrets);
   const googleDnsProvider = new GoogleDnsProvider(accountManager, context.secrets);
   const awsRoute53Provider = new AwsRoute53Provider(accountManager, context.secrets);
+  const githubProvider = new GitHubProvider(accountManager, context.secrets);
 
   pm.registerDnsProvider(ionosProvider);
   pm.registerDnsProvider(cloudflareProvider);
@@ -51,16 +54,20 @@ export async function activate(context: vscode.ExtensionContext) {
   // Initialize Tree Views
   const domainsTreeProvider = new DomainsTreeDataProvider(pm, accountManager, projectManager);
   const computeTreeProvider = new ComputeTreeDataProvider(pm, accountManager, projectManager);
+  const githubTreeProvider = new GitHubTreeDataProvider(githubProvider, accountManager);
 
   vscode.window.registerTreeDataProvider('devopsDomainsView', domainsTreeProvider);
   vscode.window.registerTreeDataProvider('devopsComputeView', computeTreeProvider);
+  vscode.window.registerTreeDataProvider('devopsGitHubView', githubTreeProvider);
 
   // Update context for welcome views
   async function updateTokenContext(): Promise<void> {
     const ionosConfigured = await ionosProvider.isConfigured();
     const hetznerConfigured = await hetznerProvider.isConfigured();
+    const githubConfigured = await githubProvider.isConfigured();
     vscode.commands.executeCommand('setContext', 'devops.ionosConfigured', ionosConfigured);
     vscode.commands.executeCommand('setContext', 'devops.hetznerConfigured', hetznerConfigured);
+    vscode.commands.executeCommand('setContext', 'devops.githubConfigured', githubConfigured);
   }
   
   await updateTokenContext();
@@ -72,15 +79,18 @@ export async function activate(context: vscode.ExtensionContext) {
     cloudflareProvider.invalidateCache();
     googleDnsProvider.invalidateCache();
     awsRoute53Provider.invalidateCache();
+    githubProvider.invalidateCache();
     await updateTokenContext();
     domainsTreeProvider.refresh();
     computeTreeProvider.refresh();
+    githubTreeProvider.refresh();
   }
 
   // Callback when projects change
   function onProjectsChanged() {
     domainsTreeProvider.refresh();
     computeTreeProvider.refresh();
+    githubTreeProvider.refresh();
   }
 
   // Register commands
@@ -96,13 +106,49 @@ export async function activate(context: vscode.ExtensionContext) {
       cloudflareProvider.invalidateCache();
       googleDnsProvider.invalidateCache();
       awsRoute53Provider.invalidateCache();
+      githubProvider.invalidateCache();
       await updateTokenContext();
       domainsTreeProvider.refresh();
       computeTreeProvider.refresh();
+      githubTreeProvider.refresh();
       logInfo('Extension', 'Views refreshed');
     }),
     vscode.commands.registerCommand('devops.showMindmap', () => {
       MindmapWebviewProvider.createOrShow(context, pm, accountManager, projectManager);
+    }),
+    // GitHub Commands
+    vscode.commands.registerCommand('devops.githubOpenRepo', async (item: RepoTreeItem) => {
+      if (item?.repo) {
+        await githubProvider.openInBrowser(item.repo.htmlUrl);
+      }
+    }),
+    vscode.commands.registerCommand('devops.githubCloneRepo', async (item: RepoTreeItem) => {
+      if (item?.repo) {
+        await githubProvider.cloneRepo(item.repo);
+      }
+    }),
+    vscode.commands.registerCommand('devops.githubTriggerWorkflow', async (item: WorkflowTreeItem) => {
+      if (item?.workflow) {
+        const branch = await vscode.window.showInputBox({
+          prompt: 'Branch für Workflow Run',
+          value: item.defaultBranch,
+          placeHolder: 'z.B. main, develop'
+        });
+        if (branch) {
+          try {
+            await githubProvider.triggerWorkflow(
+              item.repoFullName,
+              item.workflowId,
+              branch,
+              item.accountId
+            );
+            vscode.window.showInformationMessage(`Workflow "${item.workflow.name}" gestartet auf ${branch}`);
+            githubTreeProvider.refresh();
+          } catch (err) {
+            vscode.window.showErrorMessage(`Fehler: ${err}`);
+          }
+        }
+      }
     })
   );
 

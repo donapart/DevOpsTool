@@ -13,12 +13,40 @@ export interface HetznerServerWithAccount extends Server {
   accountColor: string;
 }
 
+export interface HetznerSshKey {
+  id: number;
+  name: string;
+  fingerprint: string;
+  publicKey: string;
+  labels: Record<string, string>;
+  created: string;
+  accountId: string;
+  accountName: string;
+  accountColor: string;
+}
+
+export interface HetznerVolume {
+  id: number;
+  name: string;
+  size: number;
+  status: string;
+  serverId: number | null;
+  location: string;
+  labels: Record<string, string>;
+  created: string;
+  accountId: string;
+  accountName: string;
+  accountColor: string;
+}
+
 export class HetznerCloudProvider implements IComputeProvider {
   readonly id = 'hetzner-cloud';
   readonly label = 'Hetzner Cloud';
   readonly type = 'compute' as const;
 
   private cache = new SimpleCache<HetznerServerWithAccount[]>(30000);
+  private sshKeyCache = new SimpleCache<HetznerSshKey[]>(30000);
+  private volumeCache = new SimpleCache<HetznerVolume[]>(30000);
 
   constructor(
     private accountManager: AccountManager,
@@ -31,6 +59,8 @@ export class HetznerCloudProvider implements IComputeProvider {
 
   invalidateCache(): void {
     this.cache.clear();
+    this.sshKeyCache.clear();
+    this.volumeCache.clear();
   }
 
   getAccounts(): Account[] {
@@ -210,5 +240,239 @@ export class HetznerCloudProvider implements IComputeProvider {
 
     logInfo(TAG, `Action ${action} completed for server ${serverId}`);
     return resJson;
+  }
+
+  // =============================================
+  // SSH KEYS
+  // =============================================
+  async listSshKeys(): Promise<HetznerSshKey[]> {
+    const accounts = this.getAccounts();
+    
+    if (accounts.length === 0) {
+      return [];
+    }
+
+    return this.sshKeyCache.getOrFetch('all-ssh-keys', async () => {
+      const allKeys: HetznerSshKey[] = [];
+
+      for (const account of accounts) {
+        try {
+          const token = await this.accountManager.getToken(account.id);
+          if (!token) continue;
+
+          const keys = await this.fetchSshKeysForAccount(account, token);
+          allKeys.push(...keys);
+        } catch (err) {
+          logError(TAG, `Failed to fetch SSH keys for account ${account.name}`, err);
+        }
+      }
+
+      return allKeys;
+    });
+  }
+
+  private async fetchSshKeysForAccount(account: Account, token: string): Promise<HetznerSshKey[]> {
+    logInfo(TAG, `Fetching SSH keys for account: ${account.name}`);
+
+    const response = await fetch('https://api.hetzner.cloud/v1/ssh_keys', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      if (isAuthError(response.status)) {
+        throw new AuthError('Hetzner');
+      }
+      throw new ApiError('Hetzner', response.status, response.statusText);
+    }
+
+    const data: any = await response.json();
+    const keys = (data.ssh_keys || []).map((k: any) => ({
+      id: k.id,
+      name: k.name,
+      fingerprint: k.fingerprint,
+      publicKey: k.public_key,
+      labels: k.labels || {},
+      created: k.created,
+      accountId: account.id,
+      accountName: account.name,
+      accountColor: AccountColorMap[account.color]
+    }));
+
+    logInfo(TAG, `Loaded ${keys.length} SSH keys for ${account.name}`);
+    return keys;
+  }
+
+  async createSshKey(name: string, publicKey: string, accountId?: string): Promise<HetznerSshKey> {
+    const { account, token } = await this.getTokenForAccount(accountId);
+    logInfo(TAG, `Creating SSH key: ${name} (Account: ${account.name})`);
+
+    const response = await fetch('https://api.hetzner.cloud/v1/ssh_keys', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, public_key: publicKey })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new ApiError('Hetzner', response.status, response.statusText, err);
+    }
+
+    const data: any = await response.json();
+    this.sshKeyCache.clear();
+    
+    return {
+      id: data.ssh_key.id,
+      name: data.ssh_key.name,
+      fingerprint: data.ssh_key.fingerprint,
+      publicKey: data.ssh_key.public_key,
+      labels: data.ssh_key.labels || {},
+      created: data.ssh_key.created,
+      accountId: account.id,
+      accountName: account.name,
+      accountColor: AccountColorMap[account.color]
+    };
+  }
+
+  async deleteSshKey(id: number, accountId?: string): Promise<void> {
+    const { account, token } = await this.getTokenForAccount(accountId);
+    logInfo(TAG, `Deleting SSH key: ${id} (Account: ${account.name})`);
+
+    const response = await fetch(`https://api.hetzner.cloud/v1/ssh_keys/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new ApiError('Hetzner', response.status, response.statusText, err);
+    }
+
+    this.sshKeyCache.clear();
+  }
+
+  // =============================================
+  // VOLUMES (Storage)
+  // =============================================
+  async listVolumes(): Promise<HetznerVolume[]> {
+    const accounts = this.getAccounts();
+    
+    if (accounts.length === 0) {
+      return [];
+    }
+
+    return this.volumeCache.getOrFetch('all-volumes', async () => {
+      const allVolumes: HetznerVolume[] = [];
+
+      for (const account of accounts) {
+        try {
+          const token = await this.accountManager.getToken(account.id);
+          if (!token) continue;
+
+          const volumes = await this.fetchVolumesForAccount(account, token);
+          allVolumes.push(...volumes);
+        } catch (err) {
+          logError(TAG, `Failed to fetch volumes for account ${account.name}`, err);
+        }
+      }
+
+      return allVolumes;
+    });
+  }
+
+  private async fetchVolumesForAccount(account: Account, token: string): Promise<HetznerVolume[]> {
+    logInfo(TAG, `Fetching volumes for account: ${account.name}`);
+
+    const response = await fetch('https://api.hetzner.cloud/v1/volumes', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      if (isAuthError(response.status)) {
+        throw new AuthError('Hetzner');
+      }
+      throw new ApiError('Hetzner', response.status, response.statusText);
+    }
+
+    const data: any = await response.json();
+    const volumes = (data.volumes || []).map((v: any) => ({
+      id: v.id,
+      name: v.name,
+      size: v.size,
+      status: v.status,
+      serverId: v.server,
+      location: v.location?.name || 'unknown',
+      labels: v.labels || {},
+      created: v.created,
+      accountId: account.id,
+      accountName: account.name,
+      accountColor: AccountColorMap[account.color]
+    }));
+
+    logInfo(TAG, `Loaded ${volumes.length} volumes for ${account.name}`);
+    return volumes;
+  }
+
+  async createVolume(name: string, size: number, location: string, accountId?: string): Promise<HetznerVolume> {
+    const { account, token } = await this.getTokenForAccount(accountId);
+    logInfo(TAG, `Creating volume: ${name} (${size}GB) in ${location} (Account: ${account.name})`);
+
+    const response = await fetch('https://api.hetzner.cloud/v1/volumes', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, size, location, automount: false })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new ApiError('Hetzner', response.status, response.statusText, err);
+    }
+
+    const data: any = await response.json();
+    this.volumeCache.clear();
+    
+    return {
+      id: data.volume.id,
+      name: data.volume.name,
+      size: data.volume.size,
+      status: data.volume.status,
+      serverId: data.volume.server,
+      location: data.volume.location?.name || location,
+      labels: data.volume.labels || {},
+      created: data.volume.created,
+      accountId: account.id,
+      accountName: account.name,
+      accountColor: AccountColorMap[account.color]
+    };
+  }
+
+  async deleteVolume(id: number, accountId?: string): Promise<void> {
+    const { account, token } = await this.getTokenForAccount(accountId);
+    logInfo(TAG, `Deleting volume: ${id} (Account: ${account.name})`);
+
+    const response = await fetch(`https://api.hetzner.cloud/v1/volumes/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new ApiError('Hetzner', response.status, response.statusText, err);
+    }
+
+    this.volumeCache.clear();
   }
 }

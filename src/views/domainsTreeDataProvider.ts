@@ -125,22 +125,53 @@ class RecordTreeItem extends vscode.TreeItem {
     public readonly record: DnsRecord,
     public readonly domain: IonosDomainWithAccount
   ) {
-    super(`${record.type} ${record.name}`, vscode.TreeItemCollapsibleState.None);
+    // Determine if this is a subdomain record
+    const isSubdomain = record.name !== '@' && record.name !== domain.name && !record.name.startsWith('_');
+    const isRoot = record.name === '@' || record.name === domain.name;
     
-    this.description = record.value;
-    this.tooltip = `${record.type} Record\nName: ${record.name}\nValue: ${record.value}\nTTL: ${record.ttl}s\nAccount: ${domain.accountName}`;
-    this.contextValue = 'record';
+    // Format the display name for subdomains more prominently
+    let displayName = record.name;
+    if (isSubdomain) {
+      // Show full subdomain for clarity
+      const fullName = record.name.endsWith(domain.name) ? record.name : `${record.name}.${domain.name}`;
+      displayName = `🔹 ${fullName}`;
+    } else if (isRoot) {
+      displayName = `⚫ @ (Root)`;
+    }
     
+    super(`${record.type} ${displayName}`, vscode.TreeItemCollapsibleState.None);
+    
+    // More detailed description for subdomains
+    this.description = isSubdomain 
+      ? `→ ${record.value}` 
+      : record.value;
+    
+    this.tooltip = `${record.type} Record\n` +
+      `Name: ${record.name}\n` +
+      (isSubdomain ? `Subdomain: ${record.name}.${domain.name}\n` : '') +
+      `Value: ${record.value}\n` +
+      `TTL: ${record.ttl}s\n` +
+      `Account: ${domain.accountName}`;
+    
+    this.contextValue = isSubdomain ? 'subdomain-record' : 'record';
+    
+    // Different icons for subdomains vs root records
     switch (record.type) {
       case 'A':
       case 'AAAA':
-        this.iconPath = new vscode.ThemeIcon('globe');
+        this.iconPath = new vscode.ThemeIcon(
+          isSubdomain ? 'symbol-field' : 'globe',
+          isSubdomain ? new vscode.ThemeColor('charts.blue') : undefined
+        );
         break;
       case 'MX':
         this.iconPath = new vscode.ThemeIcon('mail');
         break;
       case 'CNAME':
-        this.iconPath = new vscode.ThemeIcon('link');
+        this.iconPath = new vscode.ThemeIcon(
+          'link',
+          isSubdomain ? new vscode.ThemeColor('charts.purple') : undefined
+        );
         break;
       case 'TXT':
         this.iconPath = new vscode.ThemeIcon('note');

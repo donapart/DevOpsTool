@@ -251,6 +251,14 @@
         .node-domain { background: var(--vscode-textCodeBlock-background); }
         .node-server { background: var(--vscode-inputValidation-infoBackground); }
         .node-record { background: var(--vscode-editor-inactiveSelectionBackground); }
+        .node-subdomain { 
+            background: linear-gradient(135deg, var(--vscode-inputValidation-warningBackground), var(--vscode-textCodeBlock-background));
+            border: 2px solid var(--vscode-charts-blue);
+            font-weight: 600;
+        }
+        .node-sshkey { background: var(--vscode-editorWidget-background); border-left: 3px solid #f0ad4e; }
+        .node-storage { background: var(--vscode-editorWidget-background); border-left: 3px solid #5bc0de; }
+        .node-repo { background: var(--vscode-editorWidget-background); border-left: 3px solid #6f42c1; }
         .connection {
             position: absolute;
             pointer-events: none;
@@ -471,8 +479,20 @@
                 <span>Domain</span>
             </div>
             <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, var(--vscode-inputValidation-warningBackground), var(--vscode-textCodeBlock-background)); border: 2px solid var(--vscode-charts-blue);"></div>
+                <span>🔹 Subdomain</span>
+            </div>
+            <div class="legend-item">
                 <div class="legend-color" style="background: var(--vscode-inputValidation-infoBackground);"></div>
                 <span>Server</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--vscode-editorWidget-background); border-left: 3px solid #f0ad4e;"></div>
+                <span>🔑 SSH Key</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--vscode-editorWidget-background); border-left: 3px solid #5bc0de;"></div>
+                <span>💾 Volume</span>
             </div>
         </div>
     </div>
@@ -719,17 +739,35 @@
                         allConnections.push({ from: domainResource.projectId, to: domain.id });
                     }
 
-                    // Render records
+                    // Render records - highlight subdomains
                     domain.records.forEach((record, recIdx) => {
                         const rx = dx + xSpacing;
                         const ry = dy + (recIdx * 30);
+                        
+                        // Determine if this is a subdomain
+                        const isSubdomain = record.name !== '@' && 
+                                           record.name !== domain.name && 
+                                           !record.name.startsWith('_');
+                        const isRoot = record.name === '@' || record.name === domain.name;
+                        
+                        // Format label for subdomains
+                        let recordLabel = `${record.type} ${record.name}`;
+                        if (isSubdomain) {
+                            const fullName = record.name.endsWith(domain.name) 
+                                ? record.name 
+                                : `${record.name}.${domain.name}`;
+                            recordLabel = `${record.type} 🔹 ${fullName}`;
+                        } else if (isRoot) {
+                            recordLabel = `${record.type} ⚫ @`;
+                        }
+                        
                         allNodes.push({
                             id: `${domain.id}-${record.id}`,
-                            type: 'record',
-                            label: `${record.type} ${record.name}`,
+                            type: isSubdomain ? 'subdomain' : 'record',
+                            label: recordLabel,
                             x: rx, y: ry,
                             provider: domain.providerId,
-                            data: record
+                            data: { ...record, isSubdomain, isRoot, domainName: domain.name }
                         });
                         allConnections.push({ from: domain.id, to: `${domain.id}-${record.id}` });
                     });

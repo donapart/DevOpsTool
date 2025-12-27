@@ -5054,7 +5054,6 @@ _**Agent (model default, mode Agent)**_
 
 ---
 
-
 Hinzufügen eines Commands, der die IONOS Developer Console öffnet:
 
 
@@ -5079,7 +5078,6 @@ Hinzufügen eines Commands, der die IONOS Developer Console öffnet:
 
 
 ---
-
 
 Hinzufügen eines Commands, der die IONOS Developer Console öffnet:
 
@@ -5139,6 +5137,467 @@ Lines added: 15, lines removed: undefined
 ---
 
 
+
+---
+
+Hinzufügen des Commands in `package.json`:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: package.json</summary>
+
+**Chunk 1**
+Lines added: 6, lines removed: undefined
+
+```diff
+@@ -88,4 +88,10 @@
+          "category": "DevOps Accounts"
+        },
++       {
++         "command": "devops.openIonosDeveloperConsole",
++         "title": "IONOS Developer Console öffnen",
++         "icon": "$(link-external)",
++         "category": "DevOps Setup"
++       },
+        {
+          "command": "devops.editAccount",
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+Hinzufügen des Commands zum Context-Menü für IONOS Accounts:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: package.json</summary>
+
+**Chunk 1**
+Lines added: 5, lines removed: undefined
+
+```diff
+@@ -307,4 +307,9 @@
+            "group": "account@2"
+          },
++         {
++           "command": "devops.openIonosDeveloperConsole",
++           "when": "viewItem == account &amp;&amp; viewItem == ionos-dns",
++           "group": "account@3"
++         },
+          {
+            "command": "devops.copyServerIp",
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: src/bridge/accountCommands.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+Hinzufügen des Commands auch im "Account hinzufügen"-Dialog als Option:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: src/bridge/accountCommands.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: src/bridge/accountCommands.ts</summary>
+
+**Chunk 1**
+Lines added: 20, lines removed: 1
+
+```diff
+@@ -92,8 +92,27 @@
+                      'aws-route53': 'AWS Access Key ID:Secret Access Key (mit Doppelpunkt getrennt)'
+                  };
++ 
++                 // For IONOS, offer to open developer console
++                 if (provider === 'ionos-dns') {
++                     const openConsole = await vscode.window.showQuickPick([
++                         { label: '$(link-external) IONOS Developer Console öffnen', detail: 'open' },
++                         { label: '$(key) API Key direkt eingeben', detail: 'enter' }
++                     ], {
++                         placeHolder: 'Wie möchten Sie fortfahren?',
++                         title: 'Neuen Account hinzufügen (4/4)'
++                     });
++ 
++                     if (!openConsole) return;
++ 
++                     if (openConsole.detail === 'open') {
++                         await vscode.env.openExternal(vscode.Uri.parse('https://developer.hosting.ionos.de/keys'));
++                         vscode.window.showInformationMessage('IONOS Developer Console geöffnet. Erstellen Sie einen neuen API-Key und fügen Sie ihn dann hier ein.');
++                         logInfo(TAG, 'Opened IONOS Developer Console for API key creation');
++                     }
++                 }
+  
+                  const token = await vscode.window.showInputBox({
+                      prompt: tokenPrompts[provider] || 'API Token eingeben',
+-                     placeHolder: 'Token hier einfügen...',
++                     placeHolder: provider === 'ionos-dns' ? 'public.secret hier einfügen...' : 'Token hier einfügen...',
+                      title: 'Neuen Account hinzufügen (4/4)',
+                      password: true,
+```
+
+**Chunk 2**
+Lines added: 3, lines removed: undefined
+
+```diff
+@@ -103,4 +122,7 @@
+                              return 'Token scheint zu kurz zu sein';
+                          }
++                         if (provider === 'ionos-dns' &amp;&amp; !value.includes('.')) {
++                             return 'IONOS API Key sollte Format "public.secret" haben';
++                         }
+                          return null;
+                      }
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: $env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npm run compile</summary>
+
+```bash
+$env:Path = "C:\Program Files\Git\cmd;C:\Program Files\nodejs;C:\Users\donApart\AppData\Roaming\npm;" + $env:Path; cd D:\DevOpsTool; npm run compile
+```
+
+```
+ompile                                                                          
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+```
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+Korrigieren der Context-Menu-Bedingung:
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="grep">
+<details>
+<summary>Tool use: **grep** • Grep for "viewItem == account" in "package.json" • 3 matches</summary>
+
+Output mode: content
+
+
+| File | Content | Line |
+|------|------|------|
+| `package.json` | `"when": "viewItem == account",` | L301 |
+| `package.json` | `"when": "viewItem == account",` | L306 |
+| `package.json` | `"when": "viewItem == account && viewItem == ionos-dns",` | L311 |
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: src/views/domainsTreeDataProvider.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+Korrigieren der Context-Menu-Bedingung: Command nur für IONOS-Accounts anzeigen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: package.json</summary>
+
+**Chunk 1**
+Lines added: undefined, lines removed: 5
+
+```diff
+@@ -307,9 +307,4 @@
+            "group": "account@2"
+          },
+-         {
+-           "command": "devops.openIonosDeveloperConsole",
+-           "when": "viewItem == account &amp;&amp; viewItem == ionos-dns",
+-           "group": "account@3"
+-         },
+          {
+            "command": "devops.copyServerIp",
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: package.json</summary>
+
+**Chunk 1**
+Lines added: 5, lines removed: undefined
+
+```diff
+@@ -294,4 +294,9 @@
+            "when": "view == devopsDomainsView || view == devopsComputeView",
+            "group": "navigation@5"
++         },
++         {
++           "command": "devops.openIonosDeveloperConsole",
++           "when": "view == devopsDomainsView",
++           "group": "navigation@6"
+          }
+        ],
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: npm run compile; npx @vscode/vsce package</summary>
+
+```bash
+npm run compile; npx @vscode/vsce package
+```
+
+```
+PS D:\DevOpsTool&gt; npm run compile; npx @vscode/vsce package
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+Executing prepublish script 'npm run vscode:prepublish'...
+
+&gt; devops-hybrid@0.4.0 vscode:prepublish
+&gt; npm run compile
+
+
+&gt; devops-hybrid@0.4.0 compile
+&gt; tsc -p ./
+
+ INFO  Files included in the VSIX:   
+devops-hybrid-0.4.0.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ .cursorindexingignore [0.11 KB]
+   ├─ LICENSE.txt [1.06 KB]
+   ├─ changelog.md [1.81 KB]
+   ├─ package.json [13.97 KB]        
+   ├─ readme.md [8.59 KB]
+   ├─ .cursor/
+   │  └─ worktrees.json [0.05 KB]
+   ├─ .github/
+   │  └─ workflows/ (1 file) [0.88 KB]
+   ├─ .specstory/
+   │  ├─ .gitignore [0.09 KB]
+   │  ├─ .project.json [0.22 KB]
+   │  ├─ .what-is-this.md [3.3 KB]
+   │  └─ history/ (4 files) [1.02 MB]
+   ├─ docs/
+   │  └─ index.html [3.12 KB]
+   ├─ out/
+   │  ├─ extension.js [5.78 KB]
+   │  ├─ bridge/ (4 files) [50.87 KB]
+   │  ├─ core/ (4 files) [12.99 KB]
+   │  ├─ providers/ (5 files) [45.64 KB]
+   │  ├─ util/ (5 files) [8.89 KB]
+   │  └─ views/ (3 files) [21.12 KB]
+   └─ resources/
+      └─ webview/ (1 file) [48.28 KB]
+
+=&gt; Run vsce ls --tree to see all included files.
+
+ DONE  Packaged: D:\DevOpsTool\devops-hybrid-0.4.0.vsix (40 files, 248.67 KB)
+```
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+Committen, pushen und installieren:
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git add .; git commit -m "feat: IONOS Developer Console öffnen - Link zum Erstellen neuer API-Keys"; git push</summary>
+
+```bash
+git add .; git commit -m "feat: IONOS Developer Console öffnen - Link zum Erstellen neuer API-Keys"; git push
+```
+
+```
+ - Link zum Erstellen neuer API-Keys"; git push                                 
+warning: in the working copy of '.github/workflows/pages.yml', LF will be replaced by CRLF the next time Git touches it                                         
+warning: in the working copy of '.specstory/history/2025-12-10_01-30Z-individuelle-auswahl-von-entit├ñten-1.md', LF will be replaced by CRLF the next time Git touches it                                                                       
+warning: in the working copy of 'docs/index.html', LF will be replaced by CRLF the next time Git touches it                                                     
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the 
+next time Git touches it
+[main 7783b6a] feat: IONOS Developer Console ├Âffnen - Link zum Erstellen neuer 
+API-Keys
+ 5 files changed, 823 insertions(+), 3 deletions(-)
+Enumerating objects: 27, done.
+Counting objects: 100% (27/27), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (11/11), done.
+Writing objects: 100% (14/14), 9.11 KiB | 1.01 MiB/s, done.
+Total 14 (delta 9), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (9/9), completed with 9 local objects.
+To https://github.com/donapart/DevOpsTool.git
+   15e11ee..7783b6a  main -&gt; main
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: & "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force; & "C:\Users\donApart\AppData\Local\Programs\cursor\resources\app\bin\cursor.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force</summary>
+
+```bash
+& "C:\Users\donApart\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force; & "C:\Users\donApart\AppData\Local\Programs\cursor\resources\app\bin\cursor.cmd" --install-extension D:\DevOpsTool\devops-hybrid-0.4.0.vsix --force
+```
+
+```
+devops-hybrid-0.4.0.vsix --force;0e00dc9a-731e-4e3c-8dec-ce0ef179f585Installing extensions...                                                                   
+Extension 'devops-hybrid-0.4.0.vsix' was successfully installed.
+Installing extensions...
+Extension 'devops-hybrid-0.4.0.vsix' was successfully installed.
+```
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+IONOS Developer Console-Link hinzugefügt.
+
+## Was wurde implementiert
+
+1. Neuer Command: `devops.openIonosDeveloperConsole`
+   - Öffnet `https://developer.hosting.ionos.de/keys` im Browser
+   - Verfügbar über `Ctrl+Shift+P` → "IONOS Developer Console öffnen"
+
+2. Im "Account hinzufügen"-Dialog:
+   - Bei Auswahl von IONOS DNS erscheint eine Option
+   - "IONOS Developer Console öffnen" oder "API Key direkt eingeben"
+   - Öffnet die Console, um einen neuen Key zu erstellen
+
+3. Im View-Title-Menü:
+   - Button in der DOMAINS-View zum direkten Öffnen
+
+## Verwendung
+
+- Beim Hinzufügen eines IONOS-Accounts: Option zum Öffnen der Console
+- Über Command Palette: `Ctrl+Shift+P` → "IONOS Developer Console öffnen"
+- Über View-Title: Button in der DOMAINS-View
+
+```
+✅ Kompiliert
+✅ VSIX gepackt
+✅ Git commit & push
+✅ VS Code + Cursor installiert
+```
+
+Starte VS Code/Cursor neu, um die neue Funktion zu nutzen.
+
+---
+
+_**User (2025-12-27 02:09Z)**_
+
+die subdomains deutlicher. hetzner konfiguration für ssh keys, s3 buckets? github ?
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+Der Benutzer hat mehrere Anfragen:
+
+1. **Subdomains deutlicher** - Die Darstellung von Subdomains in der DevOps Map oder Tree View soll verbessert werden
+2. **Hetzner Konfiguration für SSH Keys, S3 Buckets** - Unterstützung für Hetzner SSH Keys und Object Storage (S3-kompatibel)
+3. **GitHub** - Integration von GitHub als Provider
+
+Das sind mehrere größere Features. Ich sollte einen Todo-Plan erstellen und dann systematisch vorgehen.
+
+Zuerst sollte ich verstehen, was bereits implementiert ist, und dann die neuen Features planen.</details></think>
+
+---
+
+Das sind mehrere größere Features. Lass mich erst den aktuellen Stand prüfen und dann einen Plan erstellen:
 
 ---
 

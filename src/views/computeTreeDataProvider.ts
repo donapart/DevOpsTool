@@ -3,7 +3,7 @@ import { ProviderManager } from '../core/providerManager';
 import { AccountManager, AccountColorLabels } from '../core/accounts';
 import { ProjectManager } from '../core/projects';
 import { Server } from '../core/providers';
-import { HetznerCloudProvider, HetznerServerWithAccount } from '../providers/hetznerCloudProvider';
+import { HetznerCloudProvider, HetznerServerWithAccount, HetznerSshKey, HetznerVolume } from '../providers/hetznerCloudProvider';
 import { logError } from '../util/logging';
 
 export class ComputeTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -40,22 +40,55 @@ export class ComputeTreeDataProvider implements vscode.TreeDataProvider<vscode.T
         return accounts.map(account => new AccountTreeItem(account));
       }
 
-      // Account level: Show servers
+      // Account level: Show categories (Servers, SSH Keys, Volumes)
       if (element instanceof AccountTreeItem) {
+        return [
+          new CategoryTreeItem('servers', 'Server', 'server', element.account.id),
+          new CategoryTreeItem('sshkeys', 'SSH Keys', 'key', element.account.id),
+          new CategoryTreeItem('volumes', 'Volumes', 'database', element.account.id)
+        ];
+      }
+
+      // Category level: Show items
+      if (element instanceof CategoryTreeItem) {
         const hetznerProvider = this.pm.getComputeProviders().find(p => p.id === 'hetzner-cloud') as HetznerCloudProvider | undefined;
         if (!hetznerProvider) return [];
 
-        const allServers = await hetznerProvider.listServers();
-        const accountServers = allServers.filter(s => s.accountId === element.account.id);
-        
-        if (accountServers.length === 0) {
-          return [new EmptyItem('Keine Server gefunden')];
+        if (element.category === 'servers') {
+          const allServers = await hetznerProvider.listServers();
+          const accountServers = allServers.filter(s => s.accountId === element.accountId);
+          
+          if (accountServers.length === 0) {
+            return [new EmptyItem('Keine Server gefunden')];
+          }
+
+          return accountServers.map(s => {
+            const displayInfo = this.projectManager.getResourceDisplayInfo('hetzner-cloud', s.id);
+            return new ServerTreeItem(s, displayInfo);
+          });
         }
 
-        return accountServers.map(s => {
-          const displayInfo = this.projectManager.getResourceDisplayInfo('hetzner-cloud', s.id);
-          return new ServerTreeItem(s, displayInfo);
-        });
+        if (element.category === 'sshkeys') {
+          const allKeys = await hetznerProvider.listSshKeys();
+          const accountKeys = allKeys.filter(k => k.accountId === element.accountId);
+          
+          if (accountKeys.length === 0) {
+            return [new EmptyItem('Keine SSH Keys gefunden')];
+          }
+
+          return accountKeys.map(k => new SshKeyTreeItem(k));
+        }
+
+        if (element.category === 'volumes') {
+          const allVolumes = await hetznerProvider.listVolumes();
+          const accountVolumes = allVolumes.filter(v => v.accountId === element.accountId);
+          
+          if (accountVolumes.length === 0) {
+            return [new EmptyItem('Keine Volumes gefunden')];
+          }
+
+          return accountVolumes.map(v => new VolumeTreeItem(v));
+        }
       }
 
       return [];
@@ -75,6 +108,61 @@ class AccountTreeItem extends vscode.TreeItem {
     this.iconPath = new vscode.ThemeIcon('account');
     this.tooltip = `Account: ${account.name}\nKlicken zum Bearbeiten`;
   }
+}
+
+class CategoryTreeItem extends vscode.TreeItem {
+  constructor(
+    public readonly category: 'servers' | 'sshkeys' | 'volumes',
+    label: string,
+    icon: string,
+    public readonly accountId: string
+  ) {
+    super(label, vscode.TreeItemCollapsibleState.Collapsed);
+    this.iconPath = new vscode.ThemeIcon(icon);
+    this.contextValue = `category-${category}`;
+  }
+}
+
+class SshKeyTreeItem extends vscode.TreeItem {
+  constructor(public readonly sshKey: HetznerSshKey) {
+    super(sshKey.name, vscode.TreeItemCollapsibleState.None);
+    
+    this.iconPath = new vscode.ThemeIcon('key', new vscode.ThemeColor('charts.yellow'));
+    this.description = sshKey.fingerprint.substring(0, 16) + '...';
+    this.tooltip = [
+      `🔑 ${sshKey.name}`,
+      `Fingerprint: ${sshKey.fingerprint}`,
+      `Erstellt: ${new Date(sshKey.created).toLocaleDateString('de-DE')}`,
+      `Account: ${sshKey.accountName}`
+    ].join('\n');
+    this.contextValue = 'sshkey';
+  }
+
+  get keyId(): number { return this.sshKey.id; }
+  get accountId(): string { return this.sshKey.accountId; }
+}
+
+class VolumeTreeItem extends vscode.TreeItem {
+  constructor(public readonly volume: HetznerVolume) {
+    super(volume.name, vscode.TreeItemCollapsibleState.None);
+    
+    const statusIcon = volume.status === 'available' ? 'charts.green' : 'charts.yellow';
+    this.iconPath = new vscode.ThemeIcon('database', new vscode.ThemeColor(statusIcon));
+    this.description = `${volume.size} GB · ${volume.location}`;
+    this.tooltip = [
+      `💾 ${volume.name}`,
+      `Größe: ${volume.size} GB`,
+      `Status: ${volume.status}`,
+      `Standort: ${volume.location}`,
+      volume.serverId ? `Angehängt an: Server ${volume.serverId}` : 'Nicht angehängt',
+      `Erstellt: ${new Date(volume.created).toLocaleDateString('de-DE')}`,
+      `Account: ${volume.accountName}`
+    ].join('\n');
+    this.contextValue = 'volume';
+  }
+
+  get volumeId(): number { return this.volume.id; }
+  get accountId(): string { return this.volume.accountId; }
 }
 
 class ServerTreeItem extends vscode.TreeItem {
@@ -188,4 +276,4 @@ class ErrorTreeItem extends vscode.TreeItem {
   }
 }
 
-export { ServerTreeItem };
+export { ServerTreeItem, SshKeyTreeItem, VolumeTreeItem, CategoryTreeItem };

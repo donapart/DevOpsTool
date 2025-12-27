@@ -16,7 +16,8 @@ export type AccountProviderType =
     | 'aws-route53'
     | 'digitalocean'
     | 'google-dns'
-    | 'google-compute';
+    | 'google-compute'
+    | 'github';
 
 /**
  * Available colors for account identification.
@@ -71,7 +72,8 @@ export const ProviderLabels: Record<AccountProviderType, string> = {
     'aws-route53': 'AWS Route 53',
     'digitalocean': 'DigitalOcean',
     'google-dns': 'Google Cloud DNS',
-    'google-compute': 'Google Compute Engine'
+    'google-compute': 'Google Compute Engine',
+    'github': 'GitHub'
 };
 
 /**

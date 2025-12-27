@@ -2,6 +2,41 @@
 
 Alle wichtigen Änderungen an dieser Extension werden hier dokumentiert.
 
+## [0.5.0] - 2024-12-27
+
+### Neu
+- **Subdomains deutlicher dargestellt**
+  - Subdomains werden mit 🔹 markiert und farblich hervorgehoben
+  - Vollständiger Subdomain-Name (z.B. www.example.com) in Tree View und DevOps Map
+  - Unterschiedliche Icons für Root-Records (@) und Subdomains
+
+- **Hetzner SSH Keys Integration**
+  - Neue Kategorie "SSH Keys" unter jedem Hetzner Account
+  - Liste aller SSH Keys mit Fingerprint
+  - SSH Keys erstellen und löschen (API-Unterstützung)
+
+- **Hetzner Volumes Integration**
+  - Neue Kategorie "Volumes" unter jedem Hetzner Account
+  - Anzeige von Größe, Status und Standort
+  - Volumes erstellen und löschen (API-Unterstützung)
+
+- **GitHub Integration**
+  - Neue GitHub View im DevOps Panel
+  - Repository-Liste mit Sprache, Stars, Forks
+  - GitHub Actions Workflows anzeigen
+  - Workflow Runs mit Status (✅ Success, ❌ Failure)
+  - Workflows manuell starten (dispatch)
+  - Repository im Browser öffnen
+  - Repository klonen (öffnet Terminal)
+
+- **IONOS Developer Console**
+  - Direktlink zur IONOS Developer Console zum Erstellen neuer API-Keys
+  - Im Account-hinzufügen Dialog integriert
+
+### Verbessert
+- DevOps Map Legend mit neuen Node-Typen (Subdomain, SSH Key, Volume)
+- Tree View Struktur für Hetzner mit Kategorien (Server, SSH Keys, Volumes)
+
 ## [0.4.0] - 2024-12-10
 
 ### Neu

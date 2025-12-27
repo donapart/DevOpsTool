@@ -2,7 +2,7 @@
   "name": "devops-hybrid",
   "displayName": "DevOps Hybrid Cockpit",
   "description": "Hybrid Cloud Management for IONOS and Hetzner within VS Code. Manage DNS records and Cloud servers without leaving your editor.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "donapart",
   "repository": {
     "type": "git",
@@ -47,6 +47,11 @@
           "id": "devopsComputeView",
           "name": "COMPUTE (HETZNER)",
           "icon": "$(server)"
+        },
+        {
+          "id": "devopsGitHubView",
+          "name": "GITHUB",
+          "icon": "$(github)"
         }
       ]
     },
@@ -260,38 +265,62 @@
         "title": "Open Web Console",
         "icon": "$(link-external)",
         "category": "DevOps Server"
+      },
+      {
+        "command": "devops.githubOpenRepo",
+        "title": "Im Browser öffnen",
+        "icon": "$(link-external)",
+        "category": "DevOps GitHub"
+      },
+      {
+        "command": "devops.githubCloneRepo",
+        "title": "Repository klonen",
+        "icon": "$(repo-clone)",
+        "category": "DevOps GitHub"
+      },
+      {
+        "command": "devops.githubTriggerWorkflow",
+        "title": "Workflow starten",
+        "icon": "$(play)",
+        "category": "DevOps GitHub"
+      },
+      {
+        "command": "devops.githubOpenWorkflowRun",
+        "title": "Run im Browser öffnen",
+        "icon": "$(link-external)",
+        "category": "DevOps GitHub"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "devops.addAccount",
-          "when": "view == devopsDomainsView || view == devopsComputeView",
+          "when": "view == devopsDomainsView || view == devopsComputeView || view == devopsGitHubView",
           "group": "navigation@1"
         },
         {
           "command": "devops.listAccounts",
-          "when": "view == devopsDomainsView || view == devopsComputeView",
+          "when": "view == devopsDomainsView || view == devopsComputeView || view == devopsGitHubView",
           "group": "navigation@2"
         },
         {
           "command": "devops.refreshAll",
-          "when": "view == devopsDomainsView || view == devopsComputeView",
+          "when": "view == devopsDomainsView || view == devopsComputeView || view == devopsGitHubView",
           "group": "navigation@2"
         },
         {
           "command": "devops.showLogs",
-          "when": "view == devopsDomainsView || view == devopsComputeView",
+          "when": "view == devopsDomainsView || view == devopsComputeView || view == devopsGitHubView",
           "group": "navigation@3"
         },
         {
           "command": "devops.showStatus",
-          "when": "view == devopsDomainsView || view == devopsComputeView",
+          "when": "view == devopsDomainsView || view == devopsComputeView || view == devopsGitHubView",
           "group": "navigation@4"
         },
         {
           "command": "devops.showMindmap",
-          "when": "view == devopsDomainsView || view == devopsComputeView",
+          "when": "view == devopsDomainsView || view == devopsComputeView || view == devopsGitHubView",
           "group": "navigation@5"
         },
         {
@@ -425,6 +454,21 @@
           "command": "devops.addNote",
           "when": "view == devopsComputeView && viewItem == server",
           "group": "4_project@4"
+        },
+        {
+          "command": "devops.githubOpenRepo",
+          "when": "view == devopsGitHubView && viewItem == repo",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "devops.githubCloneRepo",
+          "when": "view == devopsGitHubView && viewItem == repo",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "devops.githubTriggerWorkflow",
+          "when": "view == devopsGitHubView && viewItem == workflow",
+          "group": "1_actions@1"
         }
       ]
     },
@@ -438,6 +482,11 @@
         "view": "devopsComputeView",
         "contents": "Willkommen beim DevOps Hybrid Cockpit!\n\nUm Ihre Server zu sehen, fügen Sie einen Account hinzu.\n[Account hinzufügen](command:devops.addAccount)\n\nSie können mehrere Accounts mit verschiedenen Farben zur Unterscheidung anlegen.",
         "when": "!devops.hetznerConfigured"
+      },
+      {
+        "view": "devopsGitHubView",
+        "contents": "Willkommen bei GitHub Integration!\n\nUm Ihre Repositories zu sehen, fügen Sie einen GitHub Account hinzu.\n[GitHub Account hinzufügen](command:devops.addAccount)\n\nVerwenden Sie einen Personal Access Token mit repo und workflow Berechtigung.",
+        "when": "!devops.githubConfigured"
       }
     ],
     "configuration": {
