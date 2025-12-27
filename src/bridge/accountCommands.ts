@@ -29,7 +29,8 @@ export function registerAccountCommands(
                 // Step 1: Select Provider
                 const providerOptions: vscode.QuickPickItem[] = [
                     { label: '🌐 IONOS DNS', description: 'Domain & DNS Management', detail: 'ionos-dns' },
-                    { label: '☁️ Hetzner Cloud', description: 'Cloud Server Management', detail: 'hetzner-cloud' },
+                    { label: '☁️ Hetzner Cloud', description: 'Cloud Server & SSH Keys', detail: 'hetzner-cloud' },
+                    { label: '🐙 GitHub', description: 'Repositories & Actions', detail: 'github' },
                     { label: '🔶 Cloudflare', description: 'DNS & CDN', detail: 'cloudflare' },
                     { label: '🔴 Google Cloud DNS', description: 'Google Cloud Platform DNS', detail: 'google-dns' },
                     { label: '🟠 AWS Route 53', description: 'Amazon Web Services DNS', detail: 'aws-route53' },
@@ -46,7 +47,7 @@ export function registerAccountCommands(
                 const provider = selectedProvider.detail as AccountProviderType;
 
                 // Check if provider is available
-                if (!['ionos-dns', 'hetzner-cloud', 'cloudflare', 'google-dns', 'aws-route53'].includes(provider)) {
+                if (!['ionos-dns', 'hetzner-cloud', 'cloudflare', 'google-dns', 'aws-route53', 'github'].includes(provider)) {
                     vscode.window.showInformationMessage(`${selectedProvider.label} wird bald verfügbar sein!`);
                     return;
                 }
@@ -87,16 +88,52 @@ export function registerAccountCommands(
                 const tokenPrompts: Record<string, string> = {
                     'ionos-dns': 'IONOS API Key (Format: public.secret)',
                     'hetzner-cloud': 'Hetzner Cloud API Token',
+                    'github': 'GitHub Personal Access Token',
                     'cloudflare': 'Cloudflare API Token',
                     'google-dns': 'Google Service Account JSON Key (komplett einfügen)',
                     'aws-route53': 'AWS Access Key ID:Secret Access Key (mit Doppelpunkt getrennt)'
                 };
 
-                // For IONOS, offer to open developer console
-                if (provider === 'ionos-dns') {
+                // Provider Console URLs for token creation
+                const providerConsoleUrls: Record<string, { url: string; label: string; instructions: string }> = {
+                    'ionos-dns': {
+                        url: 'https://developer.hosting.ionos.de/keys',
+                        label: 'IONOS Developer Console',
+                        instructions: 'Erstellen Sie einen neuen API-Key im Format "public.secret"'
+                    },
+                    'hetzner-cloud': {
+                        url: 'https://console.hetzner.cloud/projects',
+                        label: 'Hetzner Cloud Console',
+                        instructions: 'Wählen Sie ein Projekt → Security → API Tokens → Generate API Token (Read & Write)'
+                    },
+                    'github': {
+                        url: 'https://github.com/settings/tokens/new?description=DevOps%20Hybrid%20Cockpit&scopes=repo,workflow,read:user',
+                        label: 'GitHub Token erstellen',
+                        instructions: 'Erstellen Sie einen Personal Access Token mit "repo" und "workflow" Berechtigungen. Sie können sich auch über Google bei GitHub anmelden.'
+                    },
+                    'cloudflare': {
+                        url: 'https://dash.cloudflare.com/profile/api-tokens',
+                        label: 'Cloudflare API Tokens',
+                        instructions: 'Create Token → Edit zone DNS Template → Wählen Sie Ihre Zonen'
+                    },
+                    'google-dns': {
+                        url: 'https://console.cloud.google.com/iam-admin/serviceaccounts',
+                        label: 'Google Cloud Console',
+                        instructions: 'Erstellen Sie ein Service Account mit DNS-Admin Rolle und laden Sie den JSON Key herunter'
+                    },
+                    'aws-route53': {
+                        url: 'https://console.aws.amazon.com/iam/home#/security_credentials',
+                        label: 'AWS IAM Console',
+                        instructions: 'Erstellen Sie Access Keys unter "Zugriffsschlüssel". Benötigt Route53 Berechtigungen.'
+                    }
+                };
+
+                // Offer to open provider console for all providers
+                const consoleInfo = providerConsoleUrls[provider];
+                if (consoleInfo) {
                     const openConsole = await vscode.window.showQuickPick([
-                        { label: '$(link-external) IONOS Developer Console öffnen', detail: 'open' },
-                        { label: '$(key) API Key direkt eingeben', detail: 'enter' }
+                        { label: `$(link-external) ${consoleInfo.label} öffnen`, description: 'Im Browser anmelden & Token erstellen', detail: 'open' },
+                        { label: '$(key) Token direkt eingeben', description: 'Ich habe bereits einen Token', detail: 'enter' }
                     ], {
                         placeHolder: 'Wie möchten Sie fortfahren?',
                         title: 'Neuen Account hinzufügen (4/4)'
@@ -105,15 +142,25 @@ export function registerAccountCommands(
                     if (!openConsole) return;
 
                     if (openConsole.detail === 'open') {
-                        await vscode.env.openExternal(vscode.Uri.parse('https://developer.hosting.ionos.de/keys'));
-                        vscode.window.showInformationMessage('IONOS Developer Console geöffnet. Erstellen Sie einen neuen API-Key und fügen Sie ihn dann hier ein.');
-                        logInfo(TAG, 'Opened IONOS Developer Console for API key creation');
+                        await vscode.env.openExternal(vscode.Uri.parse(consoleInfo.url));
+                        vscode.window.showInformationMessage(`${consoleInfo.label} geöffnet. ${consoleInfo.instructions}`);
+                        logInfo(TAG, `Opened ${consoleInfo.label} for token creation`);
                     }
                 }
 
+                // Provider-specific placeholders
+                const tokenPlaceholders: Record<string, string> = {
+                    'ionos-dns': 'public.secret hier einfügen...',
+                    'hetzner-cloud': 'API Token hier einfügen...',
+                    'github': 'ghp_... oder github_pat_... hier einfügen...',
+                    'cloudflare': 'API Token hier einfügen...',
+                    'google-dns': 'JSON Key hier einfügen...',
+                    'aws-route53': 'AKIAXXXXXXX:secretkey hier einfügen...'
+                };
+
                 const token = await vscode.window.showInputBox({
                     prompt: tokenPrompts[provider] || 'API Token eingeben',
-                    placeHolder: provider === 'ionos-dns' ? 'public.secret hier einfügen...' : 'Token hier einfügen...',
+                    placeHolder: tokenPlaceholders[provider] || 'Token hier einfügen...',
                     title: 'Neuen Account hinzufügen (4/4)',
                     password: true,
                     ignoreFocusOut: true,
@@ -123,6 +170,12 @@ export function registerAccountCommands(
                         }
                         if (provider === 'ionos-dns' && !value.includes('.')) {
                             return 'IONOS API Key sollte Format "public.secret" haben';
+                        }
+                        if (provider === 'github' && !value.startsWith('ghp_') && !value.startsWith('github_pat_') && !value.startsWith('gho_')) {
+                            return 'GitHub Token sollte mit "ghp_", "github_pat_" oder "gho_" beginnen';
+                        }
+                        if (provider === 'aws-route53' && !value.includes(':')) {
+                            return 'AWS Credentials sollten Format "AccessKeyId:SecretKey" haben';
                         }
                         return null;
                     }

@@ -312,4 +312,3 @@ export class GitHubProvider {
     }
   }
 }
-

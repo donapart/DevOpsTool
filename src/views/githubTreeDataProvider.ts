@@ -235,4 +235,3 @@ class ErrorTreeItem extends vscode.TreeItem {
 }
 
 export { RepoTreeItem, WorkflowTreeItem, WorkflowRunTreeItem };
-
